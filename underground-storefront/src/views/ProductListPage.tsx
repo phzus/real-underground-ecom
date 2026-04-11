@@ -80,7 +80,7 @@ const StickerSection: React.FC<{ category: HttpTypes.StoreProductCategory, categ
           subtitle={`Drop ${String(groupIdx + 1).padStart(2, '0')} — Disponível`}
           highlighted
         />
-        
+
         {/* Mobile Carousel */}
         <div className="block md:hidden relative -mx-4">
           <div className="overflow-hidden px-4" ref={emblaRef}>
@@ -92,7 +92,7 @@ const StickerSection: React.FC<{ category: HttpTypes.StoreProductCategory, categ
               ))}
             </div>
           </div>
-          
+
           {categoryProducts.length > 1 && (
             <>
               <button
@@ -217,7 +217,7 @@ const ProductListPage: React.FC = () => {
     const video = videoRef.current;
     if (video) {
       video.play().catch(() => {});
-      
+
       const forcePlay = setInterval(() => {
         if (video.paused) {
           video.play().catch(() => {});
@@ -233,7 +233,7 @@ const ProductListPage: React.FC = () => {
       <div className="bg-flash fixed inset-0 opacity-0 pointer-events-none z-999" />
 
       <div className="relative">
-        <section id="hero-section" className="relative h-[calc(100vh-200px)] lg:h-[70vh] w-full flex items-center justify-center overflow-hidden">
+        <section id="hero-section" className="relative h-[calc(100vh-200px)] lg:h-[80vh] w-full flex items-center justify-center overflow-hidden">
           <div className="absolute inset-0 z-0">
             <video
               ref={videoRef}
@@ -265,12 +265,12 @@ const ProductListPage: React.FC = () => {
               animate={{ opacity: 1, y: 0 }}
               className="text-[10px] md:text-xs font-bold uppercase mb-6 md:mb-10 text-[#e34717] tracking-[0.4em]"
             >
-              ARQUIVO STREETWEAR PREMIUM
+              PREMIUM STREETWEAR
             </motion.div>
 
             <h1
               ref={graffitiTextRef}
-              className="bg-linear-to-b from-white/60 via-white/20 to-transparent bg-clip-text text-transparent text-[30vw] sm:text-[18vw] md:text-[15vw] lg:text-[12vw] font-black italic tracking-tighter leading-[0.75] uppercase relative transition-all duration-300 select-none -rotate-2 drop-shadow-[0_0_20px_rgba(255,255,255,0.15)] pr-[0.1em]"
+              className="bg-linear-to-b from-white/60 via-white/40 to-transparent bg-clip-text text-transparent text-[30vw] sm:text-[18vw] md:text-[15vw] lg:text-[12vw] font-black italic tracking-tighter leading-[0.75] uppercase relative transition-all duration-300 select-none -rotate-2 drop-shadow-[0_0_20px_rgba(255,255,255,0.25)] pr-[0.2em]"
             >
               DROP<br />#001
             </h1>
@@ -282,7 +282,7 @@ const ProductListPage: React.FC = () => {
               className="mt-10 lg:mt-14 flex flex-col items-center"
             >
               <div className="h-12 lg:h-16 w-px bg-linear-to-b from-[#e34717] to-transparent mb-4" />
-              <p className="text-[9px] font-mono tracking-[0.5em] uppercase text-zinc-600">Role para baixo para ver mais</p>
+              <p className="text-[9px] font-mono tracking-[.5em] uppercase text-zinc-600">Role para baixo para ver mais</p>
             </motion.div>
           </div>
         </section>
@@ -314,11 +314,11 @@ const ProductListPage: React.FC = () => {
 
             if (isSticker) {
               return (
-                <StickerSection 
-                  key={category.id} 
-                  category={category} 
-                  categoryProducts={categoryProducts} 
-                  groupIdx={groupIdx} 
+                <StickerSection
+                  key={category.id}
+                  category={category}
+                  categoryProducts={categoryProducts}
+                  groupIdx={groupIdx}
                 />
               );
             }
