@@ -251,7 +251,7 @@ const ProductListPage: React.FC = () => {
                 const video = e.currentTarget;
                 video.play().catch(() => {});
               }}
-              className="w-full lg:w-[130%] lg:left-[-15%] lg:relative h-full object-cover grayscale brightness-[0.7] contrast-180 pointer-events-none select-none"
+              className="w-full h-full object-cover grayscale brightness-[0.7] contrast-180 pointer-events-none select-none"
             >
               <source src="/banner.mp4" type="video/mp4" />
             </video>
