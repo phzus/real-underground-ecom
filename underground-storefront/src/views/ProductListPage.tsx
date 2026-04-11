@@ -253,10 +253,12 @@ const ProductListPage: React.FC = () => {
               }}
               className="w-full h-full object-cover grayscale brightness-[0.7] contrast-180 pointer-events-none select-none"
             >
-              <source src="https://console-services-minio.vyab80.easypanel.host/api/v1/buckets/medusa-uploads/objects/download?preview=true&prefix=banner.mp4" type="video/mp4" />
+              <source src="/banner.mp4" type="video/mp4" />
             </video>
             <div className="absolute inset-0 bg-black/40" />
             <div className="absolute inset-0 bg-linear-to-t from-[#050505] via-transparent to-black/60" />
+            <div className="hidden lg:block absolute inset-y-0 left-0 w-[100px] bg-linear-to-r from-[#050505] to-transparent z-[1]" />
+            <div className="hidden lg:block absolute inset-y-0 right-0 w-[100px] bg-linear-to-l from-[#050505] to-transparent z-[1]" />
           </div>
 
           <div className="container mx-auto px-6 relative z-20 flex flex-col items-center justify-center text-center">
