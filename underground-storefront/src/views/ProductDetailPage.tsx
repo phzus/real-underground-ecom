@@ -123,7 +123,7 @@ const ProductDetailPage: React.FC = () => {
   const currentImageUrl = iaPreviewUrl || images[selectedImage]?.url || product.thumbnail || '';
 
   return (
-    <div className="bg-[#050505] min-h-screen text-white pt-10 lg:pt-16 carbon-pattern overflow-x-hidden">
+    <div className="bg-[#050505] min-h-screen text-white pt-10 lg:pt-0 carbon-pattern overflow-x-hidden">
       <div className="container mx-auto px-4 md:px-6 py-6 md:py-12">
         <Link to="/" className="inline-flex items-center gap-2 text-[10px] font-bold text-zinc-500 hover:text-white mb-8 md:mb-12 uppercase tracking-widest transition-colors" tabIndex={0} aria-label="Voltar ao Catálogo">
           <ChevronLeft size={14} /> Voltar ao Catálogo
@@ -233,18 +233,18 @@ const ProductDetailPage: React.FC = () => {
 
           {/* Product Data & Config */}
           <div className="lg:col-span-5 flex flex-col">
-            <div className="mb-8 md:mb-16">
+            <div className="mb-8 md:mb-10">
               <span className="text-[#e34717] text-[9px] md:text-[10px] font-black uppercase tracking-[0.5em] mb-4 block">
                 {product.categories?.[0]?.name ?? 'Série Arquivo'}
               </span>
-              <h1 className="text-4xl sm:text-6xl md:text-8xl lg:text-9xl font-black tracking-tighter mb-6 md:mb-8 italic uppercase leading-[0.8]">
+              <h1 className="text-4xl sm:text-6xl md:text-8xl lg:text-5xl font-black tracking-tighter mb-6 md:mb-8 italic uppercase leading-[1]">
                 {product.title}
               </h1>
 
-              <div className="flex flex-col sm:flex-row sm:items-end justify-between border-b border-white/5 pb-8 md:pb-12 gap-6">
+              <div className="flex flex-col sm:flex-row sm:items-end justify-between border-b border-white/5 pb-6 md:pb-8 gap-6">
                 {displayPrice && (
                   <div className="flex items-baseline gap-2">
-                    <p className="text-5xl md:text-6xl lg:text-7xl font-black tracking-tighter italic text-white leading-none">
+                    <p className="text-5xl md:text-6xl lg:text-4xl font-black tracking-tighter italic text-[#e34717] leading-none">
                       {formatPrice(displayPrice.amount, displayPrice.currencyCode)}
                     </p>
                   </div>
