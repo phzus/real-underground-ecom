@@ -219,18 +219,17 @@ export const useMedusaCart = () => {
       }
 
       try {
-        const { cart: updatedCart } = await sdk.store.cart.createLineItem(
-          currentCart.id,
-          { variant_id: variantId, quantity }
-        );
-        setCart(updatedCart);
-        return updatedCart;
+        await sdk.store.cart.createLineItem(currentCart.id, {
+          variant_id: variantId,
+          quantity,
+        });
+        await refreshCart();
       } catch (err) {
         console.error("Failed to add item:", err);
         throw err;
       }
     },
-    [cart, createCart]
+    [cart, createCart, refreshCart]
   );
 
   const updateItem = useCallback(
@@ -238,19 +237,14 @@ export const useMedusaCart = () => {
       if (!cart) return;
 
       try {
-        const { cart: updatedCart } = await sdk.store.cart.updateLineItem(
-          cart.id,
-          lineItemId,
-          { quantity }
-        );
-        setCart(updatedCart);
-        return updatedCart;
+        await sdk.store.cart.updateLineItem(cart.id, lineItemId, { quantity });
+        await refreshCart();
       } catch (err) {
         console.error("Failed to update item:", err);
         throw err;
       }
     },
-    [cart]
+    [cart, refreshCart]
   );
 
   const removeItem = useCallback(
@@ -258,17 +252,14 @@ export const useMedusaCart = () => {
       if (!cart) return;
 
       try {
-        const { parent: updatedCart } = await sdk.store.cart.deleteLineItem(
-          cart.id,
-          lineItemId
-        );
-        setCart(updatedCart as HttpTypes.StoreCart);
+        await sdk.store.cart.deleteLineItem(cart.id, lineItemId);
+        await refreshCart();
       } catch (err) {
         console.error("Failed to remove item:", err);
         throw err;
       }
     },
-    [cart]
+    [cart, refreshCart]
   );
 
   const updateCart = useCallback(

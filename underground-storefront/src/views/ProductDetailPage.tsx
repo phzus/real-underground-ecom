@@ -138,7 +138,7 @@ const ProductDetailPage: React.FC = () => {
   const currentImageUrl = iaPreviewUrl || images[selectedImage]?.url || product.thumbnail || '';
 
   return (
-    <div className="bg-[#050505] min-h-screen text-white pt-10 lg:pt-0 carbon-pattern overflow-x-hidden">
+    <div className="bg-[#050505] min-h-screen text-white carbon-pattern overflow-x-hidden">
       <div className="container mx-auto px-4 md:px-20 py-6 md:py-12">
         <Link to="/" className="inline-flex items-center gap-2 text-[10px] font-bold text-zinc-500 hover:text-white mb-8 md:mb-12 uppercase tracking-widest transition-colors" tabIndex={0} aria-label="Voltar ao Catálogo">
           <ChevronLeft size={14} /> Voltar ao Catálogo
@@ -150,12 +150,12 @@ const ProductDetailPage: React.FC = () => {
             <motion.div
               initial={{ opacity: 0, scale: 0.98 }}
               animate={{ opacity: 1, scale: 1 }}
-              className="relative aspect-[4/5] overflow-hidden bg-[#0a0a0a] border border-white/5 shadow-2xl"
+              className="relative aspect-[4/5] lg:aspect-square overflow-hidden bg-[#0a0a0a] border border-white/5 shadow-2xl"
             >
               {currentImageUrl ? (
                 <img
                   src={currentImageUrl}
-                  className={`w-full h-full object-cover transition-all duration-1000 ${iaPreviewUrl ? 'grayscale-0' : 'grayscale group-hover:grayscale-0'}`}
+                  className="w-full h-full object-cover transition-all duration-1000"
                   alt={product.title}
                 />
               ) : (
@@ -240,7 +240,7 @@ const ProductDetailPage: React.FC = () => {
                   aria-label={`Ver imagem ${idx + 1}`}
                   tabIndex={0}
                 >
-                  <img src={img.url} className="w-full h-full object-cover grayscale" alt={`${product.title} - ${idx + 1}`} />
+                  <img src={img.url} className="w-full h-full object-cover" alt={`${product.title} - ${idx + 1}`} />
                 </button>
               ))}
             </div>
@@ -252,14 +252,14 @@ const ProductDetailPage: React.FC = () => {
               <span className="text-[#e34717] text-[9px] md:text-[10px] font-black uppercase tracking-[0.5em] mb-4 block">
                 {product.categories?.[0]?.name ?? 'Série Arquivo'}
               </span>
-              <h1 className="text-4xl sm:text-6xl md:text-8xl lg:text-5xl font-black tracking-tighter mb-6 md:mb-8 italic uppercase leading-[1]">
+              <h1 className="lg:max-w-lg text-2xl md:text-8xl lg:text-5xl font-black tracking-tighter mb-6 md:mb-8 italic uppercase leading-[1]">
                 {product.title}
               </h1>
 
               <div className="flex flex-col sm:flex-row sm:items-end justify-between border-b border-white/5 pb-6 md:pb-8 gap-6">
                 {displayPrice && (
                   <div className="flex items-baseline gap-2">
-                    <p className="text-5xl md:text-6xl lg:text-4xl font-black tracking-tighter italic text-[#e34717] leading-none">
+                    <p className="text-4xl md:text-6xl lg:text-4xl font-black tracking-tighter italic text-[#e34717] leading-none">
                       {formatPrice(displayPrice.amount, displayPrice.currencyCode)}
                     </p>
                   </div>

@@ -48,7 +48,7 @@ const SectionHeader: React.FC<SectionHeaderProps> = ({ title, subtitle, highligh
     </h2>
     <div className={`mt-4 h-px bg-[#e34717]/40 ${highlighted ? 'w-24' : 'w-16'}`} />
     {highlighted && (
-      <p className="mt-4 text-xs md:text-sm text-zinc-500 max-w-md">
+      <p className="mt-4 text-xs md:text-sm text-zinc-500 max-w-lg">
         Stickers exclusivos da Underground — edição limitada, qualidade premium.
       </p>
     )}
@@ -114,7 +114,7 @@ const StickerSection: React.FC<{ category: HttpTypes.StoreProductCategory, categ
         </div>
 
         {/* Desktop Grid */}
-        <div className="hidden md:grid md:grid-cols-2 lg:grid-cols-3 gap-4 md:gap-6">
+        <div className="hidden md:grid md:grid-cols-2 lg:grid-cols-4 gap-4 md:gap-6">
           {categoryProducts.map((product, idx) => (
             <ProductCard key={product.id} product={product} index={idx} featured />
           ))}

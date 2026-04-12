@@ -1,14 +1,38 @@
 'use client';
 
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import { Trash2, Plus, Minus, ArrowRight, ShoppingBag, ChevronLeft, Loader2, ShieldCheck, CreditCard } from 'lucide-react';
 import { motion } from 'framer-motion';
 import { useCart } from '@/context/CartContext';
 import { formatPrice } from '@/lib/hooks';
+import { sdk } from '@/lib/medusa';
 
 const CartPage: React.FC = () => {
   const { cart, loading, removeItem, updateItem } = useCart();
+  const [thumbnailMap, setThumbnailMap] = useState<Record<string, string>>({});
+
+  useEffect(() => {
+    const items = cart?.items ?? [];
+    const productIds = [
+      ...new Set(items.map((i) => i.product_id).filter((id): id is string => !!id)),
+    ];
+    if (productIds.length === 0) return;
+    Promise.all(
+      productIds.map((id) =>
+        sdk.store.product.retrieve(id, { fields: '+thumbnail,*images' }).catch(() => null)
+      )
+    ).then((results) => {
+      const map: Record<string, string> = {};
+      results.forEach((res) => {
+        const product = res?.product;
+        if (!product?.id) return;
+        const url = product.thumbnail || product.images?.[0]?.url || '';
+        if (url) map[product.id] = url;
+      });
+      setThumbnailMap(map);
+    });
+  }, [cart?.items?.length]);
 
   if (loading) {
     return (
@@ -76,7 +100,7 @@ const CartPage: React.FC = () => {
           <div className="lg:col-span-7 xl:col-span-8">
             <div className="divide-y divide-white/5 border-t border-white/5">
               {items.map((item) => {
-                const thumbnail = item.thumbnail || '';
+                const thumbnail = item.thumbnail || (item.product_id ? thumbnailMap[item.product_id] : '') || '';
                 const title = item.product_title || item.title;
                 const subtitle = item.variant_title || '';
 
@@ -89,12 +113,12 @@ const CartPage: React.FC = () => {
                     key={item.id}
                     className="flex flex-row gap-4 sm:gap-8 py-10 group"
                   >
-                    <div className="w-20 h-24 sm:w-40 sm:aspect-[3/4] sm:h-auto flex-shrink-0 bg-zinc-950 border border-white/5 overflow-hidden relative">
+                    <div className="w-30 h-30 lg:w-28 lg:h-28 sm:aspect-[1/1] sm:h-auto flex-shrink-0 bg-zinc-950 border border-white/5 overflow-hidden relative">
                       {thumbnail ? (
                         <img
                           src={thumbnail}
                           alt={title}
-                          className="w-full h-full object-cover grayscale group-hover:grayscale-0 transition-all duration-700 scale-105 group-hover:scale-100"
+                          className="w-full h-full object-cover transition-all duration-700 scale-105 group-hover:scale-100"
                         />
                       ) : (
                         <div className="w-full h-full flex items-center justify-center">
@@ -104,14 +128,14 @@ const CartPage: React.FC = () => {
                     </div>
 
                     <div className="flex-grow flex flex-col justify-between">
-                      <div className="flex justify-between items-start gap-4">
+                      <div className="flex justify-between items-start gap-2 lg:gap-4">
                         <div>
-                          <h3 className="text-xl md:text-2xl font-light mb-2 tracking-tight">{title}</h3>
-                          <p className="text-[9px] text-zinc-500 uppercase tracking-[0.2em] font-bold mb-4">{subtitle}</p>
+                          <h3 className="text-base md:text-xl font-light mb-2 tracking-tight">{title}</h3>
+                          <p className="text-[9px] text-zinc-500 uppercase tracking-[0.2em] font-bold mb-2">{subtitle}</p>
                         </div>
                         <button
                           onClick={() => handleRemoveItem(item.id)}
-                          className="w-8 h-8 flex items-center justify-center rounded-full text-zinc-600 hover:text-[#e34717] hover:bg-[#e34717]/10 transition-all shrink-0"
+                          className="w-6 h-6 flex items-center justify-center rounded-full text-zinc-600 hover:text-[#e34717] hover:bg-[#e34717]/10 transition-all shrink-0"
                           aria-label={`Remove ${title} from cart`}
                           tabIndex={0}
                         >
@@ -119,22 +143,21 @@ const CartPage: React.FC = () => {
                         </button>
                       </div>
 
-                      <div className="flex flex-wrap justify-between items-end gap-6 mt-8">
+                      <div className="flex flex-wrap justify-between items-end gap-6">
                         <div className="flex flex-col gap-3">
-                          <span className="text-[8px] font-bold text-zinc-600 uppercase tracking-widest">Quantidade</span>
                           <div className="flex items-center bg-zinc-900/50 border border-white/10 rounded-sm">
                             <button
                               onClick={() => handleUpdateQuantity(item.id, item.quantity, -1)}
-                              className="p-3 text-zinc-500 hover:text-white transition-colors"
+                              className="p-2 text-zinc-500 hover:text-white transition-colors"
                               aria-label="Diminuir quantidade"
                               tabIndex={0}
                             >
                               <Minus size={14} />
                             </button>
-                            <span className="w-12 text-center text-sm font-medium">{item.quantity}</span>
+                            <span className="w-8 text-center text-sm font-medium">{item.quantity}</span>
                             <button
                               onClick={() => handleUpdateQuantity(item.id, item.quantity, 1)}
-                              className="p-3 text-zinc-500 hover:text-white transition-colors"
+                              className="p-2 text-zinc-500 hover:text-white transition-colors"
                               aria-label="Aumentar quantidade"
                               tabIndex={0}
                             >
@@ -143,8 +166,7 @@ const CartPage: React.FC = () => {
                           </div>
                         </div>
                         <div className="flex flex-col items-end gap-2">
-                          <span className="text-[8px] font-bold text-zinc-600 uppercase tracking-widest">Subtotal</span>
-                          <p className="text-2xl font-light tracking-tighter">
+                          <p className="text-xl font-light tracking-tighter">
                             {formatPrice((item.unit_price ?? 0) * item.quantity, currencyCode)}
                           </p>
                         </div>
