@@ -27,12 +27,21 @@ const PageTransition: React.FC<{ children: React.ReactNode }> = ({ children }) =
 );
 
 const ScrollToTop = () => {
-  const { pathname } = useLocation();
+  const location = useLocation();
   const lenis = useLenis();
   React.useEffect(() => {
-    lenis?.scrollTo(0, { immediate: true });
-    window.scrollTo(0, 0);
-  }, [pathname, lenis]);
+    // Stop Lenis, reset scroll, restart Lenis
+    if (lenis) {
+      lenis.stop();
+      lenis.scrollTo(0, { immediate: true, force: true });
+    }
+    window.scrollTo({ top: 0, left: 0, behavior: 'instant' });
+    document.documentElement.scrollTop = 0;
+    document.body.scrollTop = 0;
+    if (lenis) {
+      requestAnimationFrame(() => lenis.start());
+    }
+  }, [location.pathname, location.key]);
   return null;
 };
 
