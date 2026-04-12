@@ -579,6 +579,8 @@ const CheckoutPage: React.FC = () => {
       if (secret) {
         setClientSecret(secret);
         setStep('payment');
+        window.scrollTo({ top: 0, left: 0, behavior: 'instant' });
+        document.documentElement.scrollTop = 0;
       } else {
         console.error("No client_secret returned from Stripe session");
       }
