@@ -3,7 +3,7 @@
 import React, { useState } from 'react';
 import { HashRouter as Router, Routes, Route, useLocation } from 'react-router-dom';
 import { AnimatePresence, motion } from 'framer-motion';
-import { ReactLenis } from 'lenis/react';
+import { ReactLenis, useLenis } from 'lenis/react';
 import Header from '@/components/Header';
 import Navbar from '@/components/Navbar';
 import ProductListPage from '@/views/ProductListPage';
@@ -28,9 +28,11 @@ const PageTransition: React.FC<{ children: React.ReactNode }> = ({ children }) =
 
 const ScrollToTop = () => {
   const { pathname } = useLocation();
+  const lenis = useLenis();
   React.useEffect(() => {
+    lenis?.scrollTo(0, { immediate: true });
     window.scrollTo(0, 0);
-  }, [pathname]);
+  }, [pathname, lenis]);
   return null;
 };
 
