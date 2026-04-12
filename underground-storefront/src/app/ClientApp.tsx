@@ -26,6 +26,14 @@ const PageTransition: React.FC<{ children: React.ReactNode }> = ({ children }) =
   </motion.div>
 );
 
+const ScrollToTop = () => {
+  const { pathname } = useLocation();
+  React.useEffect(() => {
+    window.scrollTo(0, 0);
+  }, [pathname]);
+  return null;
+};
+
 const AnimatedRoutes = () => {
   const location = useLocation();
   return (
@@ -60,6 +68,7 @@ const ClientApp = () => {
     <ReactLenis root options={{ lerp: 0.1, duration: 1.5, smoothWheel: true }}>
       <CartContext.Provider value={cartContextValue}>
         <Router>
+          <ScrollToTop />
           <div className={`flex flex-col min-h-screen ${isMenuOpen ? 'overflow-hidden h-screen' : ''}`}>
             <div className="sticky top-0 left-0 w-full z-100">
               <Header onMenuToggle={() => setIsMenuOpen(!isMenuOpen)} isMenuOpen={isMenuOpen} />

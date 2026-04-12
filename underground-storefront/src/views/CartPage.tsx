@@ -87,9 +87,9 @@ const CartPage: React.FC = () => {
                     animate={{ opacity: 1, y: 0 }}
                     exit={{ opacity: 0, scale: 0.95 }}
                     key={item.id}
-                    className="flex flex-col sm:flex-row gap-8 py-10 group"
+                    className="flex flex-row gap-4 sm:gap-8 py-10 group"
                   >
-                    <div className="w-full sm:w-40 aspect-[3/4] bg-zinc-950 border border-white/5 overflow-hidden relative">
+                    <div className="w-20 h-24 sm:w-40 sm:aspect-[3/4] sm:h-auto flex-shrink-0 bg-zinc-950 border border-white/5 overflow-hidden relative">
                       {thumbnail ? (
                         <img
                           src={thumbnail}
@@ -145,7 +145,7 @@ const CartPage: React.FC = () => {
                         <div className="flex flex-col items-end gap-2">
                           <span className="text-[8px] font-bold text-zinc-600 uppercase tracking-widest">Subtotal</span>
                           <p className="text-2xl font-light tracking-tighter">
-                            {formatPrice(item.subtotal ?? 0, currencyCode)}
+                            {formatPrice((item.unit_price ?? 0) * item.quantity, currencyCode)}
                           </p>
                         </div>
                       </div>

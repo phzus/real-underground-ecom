@@ -24,8 +24,23 @@ const ProductDetailPage: React.FC = () => {
   const [isDecoding, setIsDecoding] = useState(false);
   const [lore, setLore] = useState<string | null>(null);
 
+  const hasOnlyOneVariant = product?.variants?.length === 1;
+
+  // Auto-select options when product has only one variant
+  React.useEffect(() => {
+    if (hasOnlyOneVariant && product?.variants?.[0]?.options) {
+      const autoSelected: Record<string, string> = {};
+      for (const opt of product.variants[0].options) {
+        if (opt.option_id) autoSelected[opt.option_id] = opt.value;
+      }
+      setSelectedOptions(autoSelected);
+    }
+  }, [product, hasOnlyOneVariant]);
+
   const selectedVariant = useMemo(() => {
     if (!product?.variants || !product?.options) return null;
+
+    if (hasOnlyOneVariant) return product.variants[0];
 
     const optionKeys = Object.keys(selectedOptions);
     if (optionKeys.length === 0) return null;
@@ -36,7 +51,7 @@ const ProductDetailPage: React.FC = () => {
         (opt) => selectedOptions[opt.option_id ?? ''] === opt.value
       );
     }) ?? null;
-  }, [product, selectedOptions]);
+  }, [product, selectedOptions, hasOnlyOneVariant]);
 
   const displayPrice = useMemo(() => {
     if (selectedVariant) {
@@ -124,14 +139,14 @@ const ProductDetailPage: React.FC = () => {
 
   return (
     <div className="bg-[#050505] min-h-screen text-white pt-10 lg:pt-0 carbon-pattern overflow-x-hidden">
-      <div className="container mx-auto px-4 md:px-6 py-6 md:py-12">
+      <div className="container mx-auto px-4 md:px-20 py-6 md:py-12">
         <Link to="/" className="inline-flex items-center gap-2 text-[10px] font-bold text-zinc-500 hover:text-white mb-8 md:mb-12 uppercase tracking-widest transition-colors" tabIndex={0} aria-label="Voltar ao Catálogo">
           <ChevronLeft size={14} /> Voltar ao Catálogo
         </Link>
 
         <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 lg:gap-20">
           {/* Main Visual Display */}
-          <div className="lg:col-span-7 space-y-6 md:space-y-8">
+          <div className="lg:col-span-6 space-y-6 md:space-y-8">
             <motion.div
               initial={{ opacity: 0, scale: 0.98 }}
               animate={{ opacity: 1, scale: 1 }}
@@ -232,7 +247,7 @@ const ProductDetailPage: React.FC = () => {
           </div>
 
           {/* Product Data & Config */}
-          <div className="lg:col-span-5 flex flex-col">
+          <div className="lg:col-span-6 flex flex-col">
             <div className="mb-8 md:mb-10">
               <span className="text-[#e34717] text-[9px] md:text-[10px] font-black uppercase tracking-[0.5em] mb-4 block">
                 {product.categories?.[0]?.name ?? 'Série Arquivo'}
@@ -252,9 +267,9 @@ const ProductDetailPage: React.FC = () => {
               </div>
             </div>
 
-            <div className="space-y-10 md:space-y-16">
-              {/* Product Options (Size, Color, etc.) */}
-              {product.options?.map((option) => (
+            <div className="space-y-10 md:space-y-14">
+              {/* Product Options (Size, Color, etc.) — hidden when single default variant */}
+              {!hasOnlyOneVariant && product.options?.map((option) => (
                 <div key={option.id}>
                   <h3 className="text-[9px] font-black uppercase tracking-widest text-zinc-600 mb-6 md:mb-8">
                     {option.title}
@@ -281,6 +296,23 @@ const ProductDetailPage: React.FC = () => {
                 </div>
               ))}
 
+              {/* Add to Cart Button */}
+              <button
+                onClick={handleAddToCart}
+                disabled={!selectedVariant || isAdding}
+                className={`w-full py-6 md:py-8 flex items-center justify-center gap-4 md:gap-6 font-black uppercase text-[10px] md:text-xs tracking-[0.5em] md:tracking-[0.6em] transition-all duration-500 ${!selectedVariant
+                  ? 'bg-zinc-900 text-zinc-700 cursor-not-allowed'
+                  : isAdding
+                    ? 'bg-[#e34717] text-white animate-pulse'
+                    : 'bg-white text-black hover:bg-[#e34717] hover:text-white shadow-2xl scale-100 active:scale-95'
+                  }`}
+                aria-label={isAdding ? 'Adicionando à sacola' : 'Adicionar à sacola'}
+                tabIndex={0}
+              >
+                {isAdding ? 'PROCESSANDO...' : selectedVariant ? 'Adquirir' : 'Selecione as Opções'}
+                <ShoppingCart size={18} />
+              </button>
+
               {/* Product Description */}
               <div className="bg-zinc-950 p-6 md:p-10 border border-white/5 space-y-6">
                 <div className="flex justify-between items-center text-[9px] font-black uppercase tracking-[0.5em] text-zinc-500">
@@ -299,23 +331,6 @@ const ProductDetailPage: React.FC = () => {
                   </div>
                 )}
               </div>
-
-              {/* Add to Cart Button */}
-              <button
-                onClick={handleAddToCart}
-                disabled={!selectedVariant || isAdding}
-                className={`w-full py-6 md:py-8 flex items-center justify-center gap-4 md:gap-6 font-black uppercase text-[10px] md:text-xs tracking-[0.5em] md:tracking-[0.6em] transition-all duration-500 ${!selectedVariant
-                  ? 'bg-zinc-900 text-zinc-700 cursor-not-allowed'
-                  : isAdding
-                    ? 'bg-[#e34717] text-white animate-pulse'
-                    : 'bg-white text-black hover:bg-[#e34717] hover:text-white shadow-2xl scale-100 active:scale-95'
-                  }`}
-                aria-label={isAdding ? 'Adicionando à sacola' : 'Adicionar à sacola'}
-                tabIndex={0}
-              >
-                {isAdding ? 'PROCESSANDO...' : selectedVariant ? 'Adquirir' : 'Selecione as Opções'}
-                <ShoppingCart size={18} />
-              </button>
             </div>
           </div>
         </div>

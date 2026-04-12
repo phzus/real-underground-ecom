@@ -659,7 +659,7 @@ const CheckoutPage: React.FC = () => {
                         </span>
                       </div>
                       <span className="tracking-tighter">
-                        {formatPrice(item.subtotal ?? 0, currencyCode)}
+                        {formatPrice((item.unit_price ?? 0) * item.quantity, currencyCode)}
                       </span>
                     </div>
                   ))}
@@ -888,7 +888,7 @@ const CheckoutPage: React.FC = () => {
                       </span>
                     </div>
                     <span className="tracking-tighter">
-                      {formatPrice(item.subtotal ?? 0, currencyCode)}
+                      {formatPrice((item.unit_price ?? 0) * item.quantity, currencyCode)}
                     </span>
                   </div>
                 ))}
