@@ -11,8 +11,8 @@ export interface CartContextType {
   cart: MedusaCart | null;
   loading: boolean;
   totalItems: number;
-  addItem: (variantId: string, quantity?: number) => Promise<MedusaCart | undefined>;
-  updateItem: (lineItemId: string, quantity: number) => Promise<MedusaCart | undefined>;
+  addItem: (variantId: string, quantity?: number) => Promise<void>;
+  updateItem: (lineItemId: string, quantity: number) => Promise<void>;
   removeItem: (lineItemId: string) => Promise<void>;
   updateCart: (data: HttpTypes.StoreUpdateCart) => Promise<MedusaCart | undefined>;
   completeCart: () => Promise<HttpTypes.StoreCompleteCartResponse | undefined>;
