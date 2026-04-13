@@ -17,9 +17,8 @@ import {
 } from "../lib/client"
 import {
   SERVICE_CATALOG,
-  SuperfreteEnvironment,
 } from "../lib/types"
-import { SUPERFRETE_MODULE } from "../index"
+import { getDirectConfig } from "../lib/direct-config"
 
 type ProviderOptions = {
   envFallbackToken?: string
@@ -43,66 +42,31 @@ class SuperfreteFulfillmentProvider extends AbstractFulfillmentProviderService {
     return SuperfreteFulfillmentProvider.identifier
   }
 
-  private tryResolveModuleService(): any | null {
-    try {
-      if (this.container_ && typeof this.container_.resolve === "function") {
-        return this.container_.resolve(SUPERFRETE_MODULE)
-      }
-    } catch {
-      // ignore
-    }
-    return null
-  }
-
-  private async buildStandaloneClient(): Promise<SuperfreteClient | null> {
-    const token =
-      this.options_.envFallbackToken || process.env.SUPERFRETE_TOKEN
-    if (!token) return null
-    const env: SuperfreteEnvironment =
-      (process.env.SUPERFRETE_ENV as SuperfreteEnvironment) || "sandbox"
-    return new SuperfreteClient({
-      token,
-      environment: env,
-      userAgent: buildUserAgent(this.options_.appName, this.options_.contactEmail),
-    })
-  }
-
   private async getClientAndFromCep(): Promise<{
     client: SuperfreteClient
     fromCep: string
     defaults: { weight_kg: number; height_cm: number; width_cm: number; length_cm: number }
     enabled_services: number[]
   } | null> {
-    const svc = this.tryResolveModuleService()
-    if (svc) {
-      try {
-        const client = await svc.getClient()
-        const cfg = await svc.getPublicConfig()
-        if (!cfg.sender.postal_code) return null
-        return {
-          client,
-          fromCep: cfg.sender.postal_code,
-          defaults: cfg.defaults,
-          enabled_services: cfg.enabled_services,
-        }
-      } catch {
-        // fall through
-      }
-    }
-    const client = await this.buildStandaloneClient()
-    if (!client) return null
-    const fromCep = process.env.SUPERFRETE_FROM_CEP
-    if (!fromCep) return null
+    // Read the config directly from the DB (or env fallback). We can't use
+    // the Medusa container here because the fulfillment provider is
+    // instantiated inside the fulfillment module's own scope and doesn't
+    // have cross-module resolution. The direct reader uses the same
+    // DATABASE_URL + COOKIE_SECRET the Medusa process already has.
+    const cfg = await getDirectConfig()
+    if (!cfg.token || !cfg.sender.postal_code) return null
+
+    const client = new SuperfreteClient({
+      token: cfg.token,
+      environment: cfg.environment,
+      userAgent: buildUserAgent(this.options_.appName, this.options_.contactEmail),
+    })
+
     return {
       client,
-      fromCep: normalizeCep(fromCep),
-      defaults: {
-        weight_kg: Number(process.env.SUPERFRETE_DEFAULT_WEIGHT ?? "0.3"),
-        height_cm: Number(process.env.SUPERFRETE_DEFAULT_HEIGHT ?? "4"),
-        width_cm: Number(process.env.SUPERFRETE_DEFAULT_WIDTH ?? "16"),
-        length_cm: Number(process.env.SUPERFRETE_DEFAULT_LENGTH ?? "24"),
-      },
-      enabled_services: [1, 2, 17],
+      fromCep: normalizeCep(cfg.sender.postal_code),
+      defaults: cfg.defaults,
+      enabled_services: cfg.enabled_services,
     }
   }
 
