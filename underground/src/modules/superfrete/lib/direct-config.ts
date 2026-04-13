@@ -1,6 +1,20 @@
-import { Client } from "pg"
 import { decryptSecret } from "./crypto"
 import { DEFAULT_ENABLED_SERVICES, SuperfreteEnvironment } from "./types"
+
+// `pg` ships as a transitive dependency of @mikro-orm/knex and is always
+// available at runtime inside the Medusa process. We require it dynamically
+// to avoid adding a direct dependency + type resolution.
+// eslint-disable-next-line @typescript-eslint/no-var-requires
+const { Client } = require("pg") as {
+  Client: new (config: {
+    connectionString?: string
+    ssl?: boolean | Record<string, unknown>
+  }) => {
+    connect(): Promise<void>
+    query(text: string): Promise<{ rows: any[] }>
+    end(): Promise<void>
+  }
+}
 
 export type DirectConfig = {
   environment: SuperfreteEnvironment
