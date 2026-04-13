@@ -1,8 +1,8 @@
 
 import React from 'react';
-import { Instagram, Twitter, Facebook, Youtube, ArrowUpRight } from 'lucide-react';
+import { Instagram, Youtube, Package } from 'lucide-react';
 import Logo from './Logo';
-import Link from 'next/link';
+import { Link } from 'react-router-dom';
 
 const Footer: React.FC = () => {
   const scrollToTop = () => {
@@ -54,6 +54,17 @@ const Footer: React.FC = () => {
               </svg>
             </a>
           </div>
+        </div>
+
+        {/* Utility Links */}
+        <div className="flex flex-wrap items-center justify-center gap-6 mb-10">
+          <Link
+            to="/rastrear"
+            className="flex items-center gap-2 text-[10px] font-black tracking-[0.3em] uppercase text-zinc-400 hover:text-[#e34717] transition-colors"
+          >
+            <Package size={12} />
+            Rastrear Pedido
+          </Link>
         </div>
 
         {/* Back to top - Centered Button */}

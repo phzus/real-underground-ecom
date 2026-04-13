@@ -10,6 +10,9 @@ import { useCart } from '@/context/CartContext';
 import { formatPrice } from '@/lib/hooks';
 import { sdk } from '@/lib/medusa';
 import type { HttpTypes } from '@medusajs/types';
+import ShippingQuote, { QuoteOption, ShippingQuoteItem } from '@/components/ShippingQuote';
+
+const SHIPPING_PREVIEW_KEY = 'superfrete_preview';
 
 const stripePromise = loadStripe(process.env.NEXT_PUBLIC_STRIPE_PK || '');
 
@@ -393,19 +396,52 @@ const CheckoutPage: React.FC = () => {
   const [touched, setTouched] = useState<Record<string, boolean>>({});
   const numberInputRef = useRef<HTMLInputElement>(null);
 
-  const [shippingForm, setShippingForm] = useState<ShippingForm>({
-    email: '',
-    firstName: '',
-    lastName: '',
-    address1: '',
-    number: '',
-    complement: '',
-    neighborhood: '',
-    postalCode: '',
-    city: '',
-    state: '',
-    countryCode: 'br',
-    phone: '',
+  const [shippingForm, setShippingForm] = useState<ShippingForm>(() => {
+    let preloadedCep = '';
+    if (typeof window !== 'undefined') {
+      try {
+        const raw = window.localStorage.getItem(SHIPPING_PREVIEW_KEY);
+        if (raw) {
+          const parsed = JSON.parse(raw);
+          if (parsed?.cep) preloadedCep = maskCEP(parsed.cep);
+        }
+      } catch {
+        // ignore
+      }
+    }
+    return {
+      email: '',
+      firstName: '',
+      lastName: '',
+      address1: '',
+      number: '',
+      complement: '',
+      neighborhood: '',
+      postalCode: preloadedCep,
+      city: '',
+      state: '',
+      countryCode: 'br',
+      phone: '',
+    };
+  });
+  const [selectedQuote, setSelectedQuote] = useState<QuoteOption | null>(() => {
+    if (typeof window === 'undefined') return null;
+    try {
+      const raw = window.localStorage.getItem(SHIPPING_PREVIEW_KEY);
+      if (!raw) return null;
+      const parsed = JSON.parse(raw);
+      if (!parsed?.service_code) return null;
+      return {
+        service_code: parsed.service_code,
+        name: parsed.service_name || '',
+        price: parsed.price || 0,
+        currency: 'R$',
+        delivery_min: 0,
+        delivery_max: 0,
+      } as QuoteOption;
+    } catch {
+      return null;
+    }
   });
 
   const currencyCode = cart?.currency_code ?? 'brl';
@@ -558,11 +594,38 @@ const CheckoutPage: React.FC = () => {
         },
       });
 
-      if (shippingOptions.length > 0) {
-        await sdk.store.cart.addShippingMethod(cart.id, {
-          option_id: shippingOptions[0].id,
-        });
+      const refreshed = await sdk.store.fulfillment.listCartOptions({
+        cart_id: cart.id,
+      });
+      const availableOptions = refreshed.shipping_options ?? [];
+      setShippingOptions(availableOptions);
+
+      const matchOption = (() => {
+        if (!selectedQuote) return null;
+        return (
+          availableOptions.find((o: any) => {
+            const code =
+              o?.data?.service_code ??
+              (typeof o?.data?.id === 'string'
+                ? Number(o.data.id.replace(/\D/g, ''))
+                : null);
+            return code === selectedQuote.service_code;
+          }) || null
+        );
+      })();
+
+      const chosen =
+        matchOption || availableOptions[0] || null;
+
+      if (!chosen) {
+        throw new Error(
+          'Nenhuma opção de frete disponível para este endereço. Verifique o CEP.'
+        );
       }
+
+      await sdk.store.cart.addShippingMethod(cart.id, {
+        option_id: chosen.id,
+      });
 
       const updatedCartRes = await sdk.store.cart.retrieve(cart.id);
       const updatedCart = updatedCartRes.cart;
@@ -827,11 +890,50 @@ const CheckoutPage: React.FC = () => {
                       </div>
                     </div>
 
+                    {/* Shipping method */}
+                    <div>
+                      <h2 className="text-3xl font-light tracking-tighter mb-8">Método de Envio</h2>
+                      <ShippingQuote
+                        items={(cart?.items ?? []).map((it): ShippingQuoteItem => ({
+                          name: it.product_title || it.title,
+                          quantity: it.quantity,
+                          unit_price: (it.unit_price ?? 0) / 100,
+                          weight: (it.variant as any)?.weight ?? null,
+                          height: (it.variant as any)?.height ?? null,
+                          width: (it.variant as any)?.width ?? null,
+                          length: (it.variant as any)?.length ?? null,
+                        }))}
+                        cartId={cart?.id}
+                        initialCep={shippingForm.postalCode}
+                        selectedServiceCode={selectedQuote?.service_code ?? null}
+                        onSelect={(opt) => {
+                          setSelectedQuote(opt);
+                          if (opt) {
+                            try {
+                              window.localStorage.setItem(
+                                SHIPPING_PREVIEW_KEY,
+                                JSON.stringify({
+                                  cep: shippingForm.postalCode.replace(/\D/g, ''),
+                                  service_code: opt.service_code,
+                                  service_name: opt.name,
+                                  price: opt.price,
+                                })
+                              );
+                            } catch {
+                              // ignore
+                            }
+                          }
+                        }}
+                        showCepInput={false}
+                        label="Escolha a transportadora"
+                      />
+                    </div>
+
                     {/* Submit */}
                     <div className="pt-8">
                       <button
                         onClick={handleSubmitShipping}
-                        disabled={isSubmitting || !isFormValid}
+                        disabled={isSubmitting || !isFormValid || !selectedQuote}
                         className="w-full bg-white text-black py-6 text-[10px] font-bold uppercase tracking-[0.4em] hover:bg-[#e34717] hover:text-white transition-all shadow-xl disabled:opacity-40 disabled:cursor-not-allowed flex items-center justify-center gap-3 relative overflow-hidden group"
                         aria-label="Confirmar endereço de entrega"
                         tabIndex={0}

@@ -10,6 +10,7 @@ import ProductListPage from '@/views/ProductListPage';
 import ProductDetailPage from '@/views/ProductDetailPage';
 import CartPage from '@/views/CartPage';
 import CheckoutPage from '@/views/CheckoutPage';
+import TrackingPage from '@/views/TrackingPage';
 import Footer from '@/components/Footer';
 import { useMedusaCart } from '@/lib/hooks';
 import { CartContext } from '@/context/CartContext';
@@ -54,6 +55,8 @@ const AnimatedRoutes = () => {
         <Route path="/product/:id" element={<PageTransition><ProductDetailPage /></PageTransition>} />
         <Route path="/cart" element={<PageTransition><CartPage /></PageTransition>} />
         <Route path="/checkout" element={<PageTransition><CheckoutPage /></PageTransition>} />
+        <Route path="/rastrear" element={<PageTransition><TrackingPage /></PageTransition>} />
+        <Route path="/rastrear/:code" element={<PageTransition><TrackingPage /></PageTransition>} />
       </Routes>
     </AnimatePresence>
   );

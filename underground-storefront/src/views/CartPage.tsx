@@ -1,16 +1,69 @@
 'use client';
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import { Link } from 'react-router-dom';
 import { Trash2, Plus, Minus, ArrowRight, ShoppingBag, ChevronLeft, Loader2, ShieldCheck, CreditCard } from 'lucide-react';
 import { motion } from 'framer-motion';
 import { useCart } from '@/context/CartContext';
 import { formatPrice } from '@/lib/hooks';
 import { sdk } from '@/lib/medusa';
+import ShippingQuote, { QuoteOption, ShippingQuoteItem } from '@/components/ShippingQuote';
+
+const SHIPPING_PREVIEW_KEY = 'superfrete_preview';
+
+type ShippingPreview = {
+  cep: string;
+  service_code: number;
+  service_name: string;
+  price: number;
+};
 
 const CartPage: React.FC = () => {
   const { cart, loading, removeItem, updateItem } = useCart();
   const [thumbnailMap, setThumbnailMap] = useState<Record<string, string>>({});
+  const [shippingPreview, setShippingPreview] = useState<ShippingPreview | null>(() => {
+    if (typeof window === 'undefined') return null;
+    try {
+      const raw = window.localStorage.getItem(SHIPPING_PREVIEW_KEY);
+      return raw ? (JSON.parse(raw) as ShippingPreview) : null;
+    } catch {
+      return null;
+    }
+  });
+
+  const quoteItems: ShippingQuoteItem[] = useMemo(
+    () =>
+      (cart?.items ?? []).map((it) => ({
+        name: it.product_title || it.title,
+        quantity: it.quantity,
+        unit_price: (it.unit_price ?? 0) / 100,
+        weight: (it.variant as any)?.weight ?? null,
+        height: (it.variant as any)?.height ?? null,
+        width: (it.variant as any)?.width ?? null,
+        length: (it.variant as any)?.length ?? null,
+      })),
+    [cart?.items]
+  );
+
+  const onShippingSelect = (opt: QuoteOption | null) => {
+    if (!opt) {
+      setShippingPreview(null);
+      window.localStorage.removeItem(SHIPPING_PREVIEW_KEY);
+      return;
+    }
+    const next: ShippingPreview = {
+      cep: shippingPreview?.cep || '',
+      service_code: opt.service_code,
+      service_name: opt.name,
+      price: opt.price,
+    };
+    setShippingPreview(next);
+    try {
+      window.localStorage.setItem(SHIPPING_PREVIEW_KEY, JSON.stringify(next));
+    } catch {
+      // ignore
+    }
+  };
 
   useEffect(() => {
     const items = cart?.items ?? [];
@@ -184,17 +237,27 @@ const CartPage: React.FC = () => {
                 <ShoppingBag size={14} /> Resumo do Pedido
               </h2>
 
-              <div className="space-y-6 mb-10">
+              <div className="space-y-6 mb-8">
                 <div className="flex justify-between text-sm font-light text-zinc-400">
                   <span>Subtotal</span>
                   <span className="text-white">{formatPrice(cart?.item_subtotal ?? 0, currencyCode)}</span>
                 </div>
                 <div className="flex justify-between text-sm font-light text-zinc-400">
                   <span>Frete</span>
-                  <span>{(cart?.shipping_total ?? 0) > 0
-                    ? <span className="text-white">{formatPrice(cart?.shipping_total ?? 0, currencyCode)}</span>
-                    : <span className="text-[#e34717] uppercase text-[10px] font-bold tracking-widest">Calculado no Checkout</span>
-                  }</span>
+                  <span>
+                    {shippingPreview ? (
+                      <span className="text-white">
+                        {new Intl.NumberFormat('pt-BR', {
+                          style: 'currency',
+                          currency: 'BRL',
+                        }).format(shippingPreview.price)}
+                      </span>
+                    ) : (
+                      <span className="text-[#e34717] uppercase text-[10px] font-bold tracking-widest">
+                        Calcular abaixo
+                      </span>
+                    )}
+                  </span>
                 </div>
                 {(cart?.discount_total ?? 0) > 0 && (
                   <div className="flex justify-between text-sm font-light text-green-500">
@@ -205,9 +268,23 @@ const CartPage: React.FC = () => {
                 <div className="pt-8 border-t border-white/10 flex justify-between items-end">
                   <span className="text-[10px] font-bold uppercase tracking-widest text-zinc-500">Total Estimado</span>
                   <span className="text-4xl font-light tracking-tighter text-white">
-                    {formatPrice(cart?.total ?? 0, currencyCode)}
+                    {formatPrice(
+                      (cart?.total ?? 0) + (shippingPreview ? shippingPreview.price * 100 : 0),
+                      currencyCode
+                    )}
                   </span>
                 </div>
+              </div>
+
+              <div className="mb-10 pb-10 border-b border-white/10">
+                <ShippingQuote
+                  items={quoteItems}
+                  cartId={cart?.id}
+                  initialCep={shippingPreview?.cep}
+                  selectedServiceCode={shippingPreview?.service_code ?? null}
+                  onSelect={onShippingSelect}
+                  label="Calcular frete"
+                />
               </div>
 
               <Link

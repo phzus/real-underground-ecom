@@ -34,6 +34,36 @@ module.exports = defineConfig({
         ],
       },
     },
+    {
+      resolve: "@medusajs/medusa/fulfillment",
+      options: {
+        providers: [
+          {
+            resolve: "@medusajs/medusa/fulfillment-manual",
+            id: "manual",
+          },
+          {
+            resolve: "./src/modules/superfrete/providers",
+            id: "superfrete",
+            options: {
+              appName: "DriveItLikeStoleIt",
+              contactEmail:
+                process.env.SUPERFRETE_CONTACT_EMAIL ||
+                "contato@driveitlikestoleit.com",
+            },
+          },
+        ],
+      },
+    },
+    {
+      resolve: "./src/modules/superfrete",
+      options: {
+        appName: "DriveItLikeStoleIt",
+        contactEmail:
+          process.env.SUPERFRETE_CONTACT_EMAIL ||
+          "contato@driveitlikestoleit.com",
+      },
+    },
     ...(process.env.S3_ACCESS_KEY_ID ? [{
       resolve: "@medusajs/medusa/file",
       options: {
