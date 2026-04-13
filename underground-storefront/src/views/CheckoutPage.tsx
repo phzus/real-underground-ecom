@@ -408,6 +408,7 @@ const CheckoutPage: React.FC = () => {
   const [savedAddresses, setSavedAddresses] = useState<CustomerAddress[]>([]);
   const [selectedAddressId, setSelectedAddressId] = useState<string | null>(null);
   const [saveAddress, setSaveAddress] = useState(false);
+  const [submitError, setSubmitError] = useState<string | null>(null);
 
   const [shippingForm, setShippingForm] = useState<ShippingForm>(() => {
     let preloadedCep = '';
@@ -613,6 +614,7 @@ const CheckoutPage: React.FC = () => {
     if (Object.keys(errors).length > 0) return;
 
     setIsSubmitting(true);
+    setSubmitError(null);
 
     const fullAddress = [
       shippingForm.address1,
@@ -673,6 +675,7 @@ const CheckoutPage: React.FC = () => {
         cart_id: cart.id,
       });
       const availableOptions = refreshed.shipping_options ?? [];
+      console.log('[checkout] shipping options returned:', availableOptions);
       setShippingOptions(availableOptions);
 
       const matchOption = (() => {
@@ -689,41 +692,75 @@ const CheckoutPage: React.FC = () => {
         );
       })();
 
-      const chosen =
-        matchOption || availableOptions[0] || null;
+      const chosen = matchOption || availableOptions[0] || null;
 
       if (!chosen) {
         throw new Error(
-          'Nenhuma opção de frete disponível para este endereço. Verifique o CEP.'
+          'Nenhuma opção de frete SuperFrete configurada para este endereço. Confirme o CEP ou entre em contato.'
         );
       }
 
-      await sdk.store.cart.addShippingMethod(cart.id, {
-        option_id: chosen.id,
-      });
+      console.log('[checkout] chosen shipping option:', chosen);
+
+      try {
+        await sdk.store.cart.addShippingMethod(cart.id, {
+          option_id: chosen.id,
+        });
+      } catch (shipErr: any) {
+        console.error('[checkout] addShippingMethod failed:', shipErr);
+        const detail =
+          shipErr?.response?.data?.message ||
+          shipErr?.message ||
+          'Erro ao aplicar o frete';
+        throw new Error(`Frete: ${detail}`);
+      }
 
       const updatedCartRes = await sdk.store.cart.retrieve(cart.id);
       const updatedCart = updatedCartRes.cart;
+      console.log('[checkout] cart after addShippingMethod:', {
+        total: updatedCart.total,
+        shipping_total: updatedCart.shipping_total,
+        shipping_methods: updatedCart.shipping_methods,
+      });
 
-      const { payment_collection } = await sdk.store.payment.initiatePaymentSession(
-        updatedCart,
-        {
-          provider_id: "pp_stripe_stripe",
-        }
-      );
-
-      const secret = payment_collection?.payment_sessions?.[0]?.data?.client_secret as string | undefined;
-
-      if (secret) {
-        setClientSecret(secret);
-        setStep('payment');
-        window.scrollTo({ top: 0, left: 0, behavior: 'instant' });
-        document.documentElement.scrollTop = 0;
-      } else {
-        console.error("No client_secret returned from Stripe session");
+      if (!updatedCart.shipping_methods || updatedCart.shipping_methods.length === 0) {
+        throw new Error(
+          'O frete não foi aplicado ao carrinho. Tente recarregar a página.'
+        );
       }
-    } catch (err) {
-      console.error("Failed to proceed to payment:", err);
+
+      try {
+        const { payment_collection } = await sdk.store.payment.initiatePaymentSession(
+          updatedCart,
+          {
+            provider_id: 'pp_stripe_stripe',
+          }
+        );
+
+        const secret = payment_collection?.payment_sessions?.[0]?.data
+          ?.client_secret as string | undefined;
+
+        if (secret) {
+          setClientSecret(secret);
+          setStep('payment');
+          window.scrollTo({ top: 0, left: 0, behavior: 'instant' });
+          document.documentElement.scrollTop = 0;
+        } else {
+          throw new Error('Stripe não retornou chave de pagamento.');
+        }
+      } catch (payErr: any) {
+        console.error('[checkout] initiatePaymentSession failed:', payErr);
+        const detail =
+          payErr?.response?.data?.message ||
+          payErr?.message ||
+          'Erro ao iniciar pagamento';
+        throw new Error(`Pagamento: ${detail}`);
+      }
+    } catch (err: any) {
+      console.error('[checkout] Failed to proceed to payment:', err);
+      setSubmitError(
+        err?.response?.data?.message || err?.message || 'Ocorreu um erro inesperado.'
+      );
     } finally {
       setIsSubmitting(false);
     }
@@ -1074,6 +1111,17 @@ const CheckoutPage: React.FC = () => {
                           </div>
                         </label>
                       </div>
+                    )}
+
+                    {submitError && (
+                      <motion.div
+                        initial={{ opacity: 0, y: -10 }}
+                        animate={{ opacity: 1, y: 0 }}
+                        className="flex items-start gap-3 bg-[#e34717]/10 border border-[#e34717]/20 p-4 text-[#e34717] text-xs font-medium rounded-sm"
+                      >
+                        <AlertCircle size={16} className="shrink-0 mt-0.5" />
+                        <span>{submitError}</span>
+                      </motion.div>
                     )}
 
                     {/* Submit */}
