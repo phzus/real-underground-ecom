@@ -17,7 +17,7 @@ import {
   createCustomerAddress,
   listCustomerAddresses,
 } from '@/lib/auth';
-import { MapPin, Save } from 'lucide-react';
+import { Save } from 'lucide-react';
 
 const SHIPPING_PREVIEW_KEY = 'superfrete_preview';
 
