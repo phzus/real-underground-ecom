@@ -1,5 +1,16 @@
 import { AbstractFulfillmentProviderService } from "@medusajs/framework/utils"
 import {
+  CalculatedShippingOptionPrice,
+  CalculateShippingOptionPriceDTO,
+  CreateFulfillmentResult,
+  CreateShippingOptionDTO,
+  FulfillmentDTO,
+  FulfillmentItemDTO,
+  FulfillmentOption,
+  FulfillmentOrderDTO,
+  ValidateFulfillmentDataContext,
+} from "@medusajs/framework/types"
+import {
   SuperfreteClient,
   buildUserAgent,
   normalizeCep,
@@ -16,31 +27,6 @@ type ProviderOptions = {
   contactEmail?: string
 }
 
-type FulfillmentOptionData = {
-  id: string
-  service_code: number
-  name: string
-  carrier: string
-}
-
-type CalculatePriceContext = {
-  from_location?: {
-    address?: { postal_code?: string }
-  }
-  shipping_address?: {
-    postal_code?: string
-  }
-  items?: Array<{
-    quantity: number
-    variant?: {
-      weight?: number | null
-      height?: number | null
-      width?: number | null
-      length?: number | null
-    }
-  }>
-}
-
 class SuperfreteFulfillmentProvider extends AbstractFulfillmentProviderService {
   static identifier = "superfrete"
 
@@ -48,8 +34,7 @@ class SuperfreteFulfillmentProvider extends AbstractFulfillmentProviderService {
   protected readonly options_: ProviderOptions
 
   constructor(container: any, options: ProviderOptions = {}) {
-    // @ts-expect-error — base class is loose
-    super(...arguments)
+    super()
     this.container_ = container
     this.options_ = options
   }
@@ -121,7 +106,7 @@ class SuperfreteFulfillmentProvider extends AbstractFulfillmentProviderService {
     }
   }
 
-  async getFulfillmentOptions(): Promise<FulfillmentOptionData[]> {
+  async getFulfillmentOptions(): Promise<FulfillmentOption[]> {
     return Object.entries(SERVICE_CATALOG).map(([code, info]) => ({
       id: `superfrete-${code}`,
       service_code: Number(code),
@@ -131,27 +116,27 @@ class SuperfreteFulfillmentProvider extends AbstractFulfillmentProviderService {
   }
 
   async validateFulfillmentData(
-    optionData: FulfillmentOptionData,
+    optionData: Record<string, unknown>,
     data: Record<string, unknown>,
-    _context: unknown
-  ): Promise<Record<string, unknown>> {
+    _context: ValidateFulfillmentDataContext
+  ): Promise<any> {
     return { ...data, service_code: optionData.service_code }
   }
 
-  async validateOption(data: FulfillmentOptionData): Promise<boolean> {
-    return Boolean(data?.service_code)
+  async validateOption(data: Record<string, unknown>): Promise<boolean> {
+    return Boolean((data as any)?.service_code)
   }
 
-  canCalculate(_data: FulfillmentOptionData): boolean {
+  async canCalculate(_data: CreateShippingOptionDTO): Promise<boolean> {
     return true
   }
 
   async calculatePrice(
-    optionData: FulfillmentOptionData,
-    _data: Record<string, unknown>,
-    context: CalculatePriceContext
-  ): Promise<number> {
-    const toCep = context?.shipping_address?.postal_code
+    optionData: CalculateShippingOptionPriceDTO["optionData"],
+    _data: CalculateShippingOptionPriceDTO["data"],
+    context: CalculateShippingOptionPriceDTO["context"]
+  ): Promise<CalculatedShippingOptionPrice> {
+    const toCep = (context as any)?.shipping_address?.postal_code
     if (!toCep) {
       throw new Error(
         "SuperFrete: shipping address postal_code is required to calculate price"
@@ -165,7 +150,24 @@ class SuperfreteFulfillmentProvider extends AbstractFulfillmentProviderService {
     }
     const { client, fromCep, defaults } = setup
 
-    const items = context?.items ?? []
+    const serviceCode = Number(
+      (optionData as any)?.service_code ??
+        ((optionData as any)?.id as string | undefined)?.replace(/\D/g, "")
+    )
+    if (!serviceCode) {
+      throw new Error("SuperFrete: missing service_code on shipping option")
+    }
+
+    const items = ((context as any)?.items ?? []) as Array<{
+      quantity: number
+      variant?: {
+        weight?: number | null
+        height?: number | null
+        width?: number | null
+        length?: number | null
+      }
+    }>
+
     const products = items.length
       ? items.map((it) => ({
           quantity: it.quantity,
@@ -195,49 +197,50 @@ class SuperfreteFulfillmentProvider extends AbstractFulfillmentProviderService {
     const quotes = await client.calculate({
       from_postal_code: fromCep,
       to_postal_code: normalizeCep(toCep),
-      services: [optionData.service_code],
+      services: [serviceCode],
       products,
     })
 
-    const match = quotes.find(
-      (q) => !q.has_error && q.id === optionData.service_code
-    )
+    const match = quotes.find((q) => !q.has_error && q.id === serviceCode)
     if (!match) {
       throw new Error(
-        `SuperFrete: no valid quote returned for service ${optionData.service_code}`
+        `SuperFrete: no valid quote returned for service ${serviceCode}`
       )
     }
-    return Math.round(Number(match.price) * 100)
+    return {
+      calculated_amount: Number(match.price),
+      is_calculated_price_tax_inclusive: true,
+    }
   }
 
   async createFulfillment(
-    _data: unknown,
-    _items: unknown,
-    _order: unknown,
-    _fulfillment: unknown
-  ): Promise<Record<string, unknown>> {
-    return {}
+    _data: Record<string, unknown>,
+    _items: Partial<Omit<FulfillmentItemDTO, "fulfillment">>[],
+    _order: Partial<FulfillmentOrderDTO> | undefined,
+    _fulfillment: Partial<Omit<FulfillmentDTO, "provider_id" | "data" | "items">>
+  ): Promise<CreateFulfillmentResult> {
+    return { data: {}, labels: [] }
   }
 
-  async cancelFulfillment(_fulfillment: unknown): Promise<Record<string, unknown>> {
+  async cancelFulfillment(_data: Record<string, unknown>): Promise<any> {
     return {}
   }
 
   async createReturnFulfillment(
-    _fulfillment: unknown
-  ): Promise<Record<string, unknown>> {
-    return {}
+    _fulfillment: Record<string, unknown>
+  ): Promise<CreateFulfillmentResult> {
+    return { data: {}, labels: [] }
   }
 
-  async getFulfillmentDocuments(_data: unknown): Promise<never[]> {
+  async getFulfillmentDocuments(_data: Record<string, unknown>): Promise<never[]> {
     return []
   }
 
-  async getReturnDocuments(_data: unknown): Promise<never[]> {
+  async getReturnDocuments(_data: Record<string, unknown>): Promise<never[]> {
     return []
   }
 
-  async getShipmentDocuments(_data: unknown): Promise<never[]> {
+  async getShipmentDocuments(_data: Record<string, unknown>): Promise<never[]> {
     return []
   }
 }

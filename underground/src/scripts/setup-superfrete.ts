@@ -118,9 +118,9 @@ export default async function setupSuperfrete({ container }: ExecArgs) {
   }
 
   const existingOptions = await fulfillmentService.listShippingOptions({
-    service_zone_id: zone.id,
+    service_zone: zone.id,
     provider_id: PROVIDER_ID,
-  })
+  } as any)
 
   const existingByName = new Map<string, any>(
     (existingOptions || []).map((o: any) => [o.name, o])

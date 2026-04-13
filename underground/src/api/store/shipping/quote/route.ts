@@ -49,7 +49,7 @@ export async function POST(req: MedusaRequest, res: MedusaResponse) {
     if (!cart) {
       return res.status(404).json({ message: "Cart not found" })
     }
-    if (!toCep) toCep = cart.shipping_address?.postal_code
+    if (!toCep) toCep = cart.shipping_address?.postal_code ?? undefined
     if (items.length === 0) {
       items = (cart.items || []).map((it: any) => ({
         name: it.title,

@@ -1,5 +1,5 @@
 import { defineRouteConfig } from "@medusajs/admin-sdk"
-import { Buildings } from "@medusajs/icons"
+import { ArchiveBox } from "@medusajs/icons"
 import {
   Badge,
   Button,
@@ -157,7 +157,7 @@ const SuperfreteShipmentsPage = () => {
 
 export const config = defineRouteConfig({
   label: "Envios",
-  icon: Buildings,
+  icon: ArchiveBox,
 })
 
 export default SuperfreteShipmentsPage

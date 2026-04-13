@@ -1,5 +1,5 @@
 import { defineRouteConfig } from "@medusajs/admin-sdk"
-import { Truck } from "@medusajs/icons"
+import { HandTruck } from "@medusajs/icons"
 import {
   Badge,
   Button,
@@ -378,7 +378,7 @@ const SuperfreteSettingsPage = () => {
 
 export const config = defineRouteConfig({
   label: "SuperFrete",
-  icon: Truck,
+  icon: HandTruck,
 })
 
 export default SuperfreteSettingsPage

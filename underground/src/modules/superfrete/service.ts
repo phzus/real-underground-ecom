@@ -94,8 +94,7 @@ class SuperfreteModuleService extends MedusaService({
   protected moduleOptions_: ModuleOptions
 
   constructor(container: unknown, options?: ModuleOptions) {
-    // @ts-expect-error — MedusaService constructor signature is loose
-    super(...arguments)
+    super(...(arguments as any))
     this.moduleOptions_ = options || {}
   }
 
@@ -128,12 +127,16 @@ class SuperfreteModuleService extends MedusaService({
   private async upsertConfigRow(patch: Record<string, unknown>): Promise<any> {
     const existing = await this.loadConfigRow()
     if (existing) {
-      const [updated] = await this.updateSuperfreteConfigs([
+      const result: any = await this.updateSuperfreteConfigs([
         { id: CONFIG_ID, ...patch },
-      ])
-      return updated
+      ] as any)
+      return Array.isArray(result) ? result[0] : result
     }
-    return await this.createSuperfreteConfigs({ id: CONFIG_ID, ...patch })
+    const created: any = await this.createSuperfreteConfigs({
+      id: CONFIG_ID,
+      ...patch,
+    } as any)
+    return Array.isArray(created) ? created[0] : created
   }
 
   async resolveToken(): Promise<{ token: string; source: "db" | "env" }> {
@@ -396,7 +399,7 @@ class SuperfreteModuleService extends MedusaService({
     try {
       const res = await client.createCartShipment(req)
       const catalog = SERVICE_CATALOG[params.service_id]
-      const [shipment] = await this.createSuperfreteShipments([
+      const created: any = await this.createSuperfreteShipments([
         {
           order_id: params.order_id,
           superfrete_order_id: res.id,
@@ -410,11 +413,11 @@ class SuperfreteModuleService extends MedusaService({
           volumes_snapshot: volumes as any,
           products_snapshot: req.products as any,
         },
-      ])
-      return shipment
+      ] as any)
+      return Array.isArray(created) ? created[0] : created
     } catch (e) {
       const err = e instanceof SuperfreteApiError ? e : null
-      const [shipment] = await this.createSuperfreteShipments([
+      const created: any = await this.createSuperfreteShipments([
         {
           order_id: params.order_id,
           service_id: params.service_id,
@@ -427,8 +430,8 @@ class SuperfreteModuleService extends MedusaService({
             ? `${err.message} — ${JSON.stringify(err.body)}`
             : String(e),
         },
-      ])
-      return shipment
+      ] as any)
+      return Array.isArray(created) ? created[0] : created
     }
   }
 
@@ -447,7 +450,7 @@ class SuperfreteModuleService extends MedusaService({
     }
     const tag = await client.printTag([shipment.superfrete_order_id])
     const info = await client.getOrderInfo(shipment.superfrete_order_id)
-    const [updated] = await this.updateSuperfreteShipments([
+    const updated: any = await this.updateSuperfreteShipments([
       {
         id: shipment.id,
         label_url: tag.url,
@@ -456,8 +459,8 @@ class SuperfreteModuleService extends MedusaService({
         last_synced_at: new Date(),
         last_error: null,
       },
-    ])
-    return updated
+    ] as any)
+    return Array.isArray(updated) ? updated[0] : updated
   }
 
   async cancelShipment(shipmentId: string, reason: string): Promise<any> {
@@ -465,22 +468,22 @@ class SuperfreteModuleService extends MedusaService({
     const shipment = rows[0]
     if (!shipment) throw new Error(`Shipment ${shipmentId} not found`)
     if (!shipment.superfrete_order_id) {
-      const [updated] = await this.updateSuperfreteShipments([
+      const u: any = await this.updateSuperfreteShipments([
         { id: shipment.id, status: "canceled", cancelled_reason: reason },
-      ])
-      return updated
+      ] as any)
+      return Array.isArray(u) ? u[0] : u
     }
     const client = await this.getClient()
     await client.cancelOrder(shipment.superfrete_order_id, reason)
-    const [updated] = await this.updateSuperfreteShipments([
+    const u: any = await this.updateSuperfreteShipments([
       {
         id: shipment.id,
         status: "canceled",
         cancelled_reason: reason,
         last_synced_at: new Date(),
       },
-    ])
-    return updated
+    ] as any)
+    return Array.isArray(u) ? u[0] : u
   }
 
   async syncShipmentStatus(shipmentId: string): Promise<any> {
@@ -490,7 +493,7 @@ class SuperfreteModuleService extends MedusaService({
     if (!shipment.superfrete_order_id) return shipment
     const client = await this.getClient()
     const info = await client.getOrderInfo(shipment.superfrete_order_id)
-    const [updated] = await this.updateSuperfreteShipments([
+    const u: any = await this.updateSuperfreteShipments([
       {
         id: shipment.id,
         status: (info.status as any) || shipment.status,
@@ -498,8 +501,8 @@ class SuperfreteModuleService extends MedusaService({
         label_url: info.print?.url ?? shipment.label_url,
         last_synced_at: new Date(),
       },
-    ])
-    return updated
+    ] as any)
+    return Array.isArray(u) ? u[0] : u
   }
 
   async findShipmentByOrderId(order_id: string): Promise<any | null> {
@@ -541,7 +544,7 @@ class SuperfreteModuleService extends MedusaService({
         tracking_code: data?.tracking ?? shipment.tracking_code,
         last_synced_at: new Date(),
       },
-    ])
+    ] as any)
   }
 }
 

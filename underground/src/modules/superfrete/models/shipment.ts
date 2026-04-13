@@ -2,9 +2,9 @@ import { model } from "@medusajs/framework/utils"
 
 const SuperfreteShipment = model.define("superfrete_shipment", {
   id: model.id().primaryKey(),
-  order_id: model.text().index(),
+  order_id: model.text(),
   cart_id: model.text().nullable(),
-  superfrete_order_id: model.text().nullable().index(),
+  superfrete_order_id: model.text().nullable(),
   service_id: model.number(),
   service_name: model.text(),
   carrier: model.text().nullable(),
@@ -19,7 +19,7 @@ const SuperfreteShipment = model.define("superfrete_shipment", {
       "error",
     ])
     .default("draft"),
-  tracking_code: model.text().nullable().index(),
+  tracking_code: model.text().nullable(),
   label_url: model.text().nullable(),
   price: model.number(),
   discount: model.number().default(0),
