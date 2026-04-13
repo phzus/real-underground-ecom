@@ -30,7 +30,8 @@ type Props = {
   cartId?: string;
   initialCep?: string;
   selectedServiceCode?: number | null;
-  onSelect?: (option: QuoteOption | null) => void;
+  onSelect?: (option: QuoteOption | null, cep: string) => void;
+  onCepChange?: (cep: string) => void;
   showCepInput?: boolean;
   label?: string;
 };
@@ -83,10 +84,11 @@ const ShippingQuote: React.FC<Props> = ({
   initialCep = '',
   selectedServiceCode = null,
   onSelect,
+  onCepChange,
   showCepInput = true,
   label = 'Frete',
 }) => {
-  const [cep, setCep] = useState(initialCep);
+  const [cep, setCep] = useState(() => (initialCep ? maskCEP(initialCep) : ''));
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [options, setOptions] = useState<QuoteOption[]>([]);
@@ -104,7 +106,7 @@ const ShippingQuote: React.FC<Props> = ({
         setOptions(list);
         if (list.length > 0 && selectedServiceCode == null && onSelect) {
           const cheapest = [...list].sort((a, b) => a.price - b.price)[0];
-          onSelect(cheapest);
+          onSelect(cheapest, digits);
         }
       } catch (e) {
         setError((e as Error).message);
@@ -118,15 +120,17 @@ const ShippingQuote: React.FC<Props> = ({
 
   useEffect(() => {
     if (initialCep && initialCep.replace(/\D/g, '').length === 8) {
+      setCep(maskCEP(initialCep));
       run(initialCep);
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [initialCep, items.length]);
 
-  const onCepChange = (v: string) => {
+  const handleCepInput = (v: string) => {
     const masked = maskCEP(v);
     setCep(masked);
     setTouched(true);
+    if (onCepChange) onCepChange(masked.replace(/\D/g, ''));
     if (masked.replace(/\D/g, '').length === 8) {
       run(masked);
     } else {
@@ -153,7 +157,7 @@ const ShippingQuote: React.FC<Props> = ({
               type="text"
               inputMode="numeric"
               value={cep}
-              onChange={(e) => onCepChange(e.target.value)}
+              onChange={(e) => handleCepInput(e.target.value)}
               maxLength={9}
               placeholder="00000-000"
               className="w-full bg-transparent border-b py-3 pr-8 text-sm font-medium text-white placeholder:text-zinc-800 border-zinc-800 focus:border-[#e34717] focus:outline-none transition-all"
@@ -195,7 +199,7 @@ const ShippingQuote: React.FC<Props> = ({
                 <button
                   key={opt.service_code}
                   type="button"
-                  onClick={() => onSelect && onSelect(opt)}
+                  onClick={() => onSelect && onSelect(opt, cep.replace(/\D/g, ''))}
                   className={`w-full text-left px-4 py-3 border transition-all rounded-sm flex items-center justify-between gap-4 ${
                     selected
                       ? 'border-[#e34717] bg-[#e34717]/5'

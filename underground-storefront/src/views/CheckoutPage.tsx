@@ -1021,14 +1021,14 @@ const CheckoutPage: React.FC = () => {
                         cartId={cart?.id}
                         initialCep={shippingForm.postalCode}
                         selectedServiceCode={selectedQuote?.service_code ?? null}
-                        onSelect={(opt) => {
+                        onSelect={(opt, cep) => {
                           setSelectedQuote(opt);
                           if (opt) {
                             try {
                               window.localStorage.setItem(
                                 SHIPPING_PREVIEW_KEY,
                                 JSON.stringify({
-                                  cep: shippingForm.postalCode.replace(/\D/g, ''),
+                                  cep: cep || shippingForm.postalCode.replace(/\D/g, ''),
                                   service_code: opt.service_code,
                                   service_name: opt.name,
                                   price: opt.price,

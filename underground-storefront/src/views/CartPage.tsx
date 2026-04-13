@@ -45,14 +45,14 @@ const CartPage: React.FC = () => {
     [cart?.items]
   );
 
-  const onShippingSelect = (opt: QuoteOption | null) => {
+  const onShippingSelect = (opt: QuoteOption | null, cep: string) => {
     if (!opt) {
       setShippingPreview(null);
       window.localStorage.removeItem(SHIPPING_PREVIEW_KEY);
       return;
     }
     const next: ShippingPreview = {
-      cep: shippingPreview?.cep || '',
+      cep: cep || shippingPreview?.cep || '',
       service_code: opt.service_code,
       service_name: opt.name,
       price: opt.price,
