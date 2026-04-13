@@ -1012,7 +1012,7 @@ const CheckoutPage: React.FC = () => {
                         items={(cart?.items ?? []).map((it): ShippingQuoteItem => ({
                           name: it.product_title || it.title,
                           quantity: it.quantity,
-                          unit_price: (it.unit_price ?? 0) / 100,
+                          unit_price: it.unit_price ?? 0,
                           weight: (it.variant as any)?.weight ?? null,
                           height: (it.variant as any)?.height ?? null,
                           width: (it.variant as any)?.width ?? null,

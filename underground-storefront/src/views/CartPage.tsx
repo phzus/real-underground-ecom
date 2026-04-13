@@ -36,7 +36,7 @@ const CartPage: React.FC = () => {
       (cart?.items ?? []).map((it) => ({
         name: it.product_title || it.title,
         quantity: it.quantity,
-        unit_price: (it.unit_price ?? 0) / 100,
+        unit_price: it.unit_price ?? 0,
         weight: (it.variant as any)?.weight ?? null,
         height: (it.variant as any)?.height ?? null,
         width: (it.variant as any)?.width ?? null,
@@ -269,7 +269,7 @@ const CartPage: React.FC = () => {
                   <span className="text-[10px] font-bold uppercase tracking-widest text-zinc-500">Total Estimado</span>
                   <span className="text-4xl font-light tracking-tighter text-white">
                     {formatPrice(
-                      (cart?.total ?? 0) + (shippingPreview ? shippingPreview.price * 100 : 0),
+                      (cart?.total ?? 0) + (shippingPreview ? shippingPreview.price : 0),
                       currencyCode
                     )}
                   </span>
