@@ -20,6 +20,7 @@ import {
 import { Save } from 'lucide-react';
 
 const SHIPPING_PREVIEW_KEY = 'superfrete_preview';
+const CHECKOUT_FORM_KEY = 'checkout_form_draft';
 
 const stripePromise = loadStripe(process.env.NEXT_PUBLIC_STRIPE_PK || '');
 
@@ -411,19 +412,7 @@ const CheckoutPage: React.FC = () => {
   const [submitError, setSubmitError] = useState<string | null>(null);
 
   const [shippingForm, setShippingForm] = useState<ShippingForm>(() => {
-    let preloadedCep = '';
-    if (typeof window !== 'undefined') {
-      try {
-        const raw = window.localStorage.getItem(SHIPPING_PREVIEW_KEY);
-        if (raw) {
-          const parsed = JSON.parse(raw);
-          if (parsed?.cep) preloadedCep = maskCEP(parsed.cep);
-        }
-      } catch {
-        // ignore
-      }
-    }
-    return {
+    const empty: ShippingForm = {
       email: '',
       firstName: '',
       lastName: '',
@@ -431,13 +420,41 @@ const CheckoutPage: React.FC = () => {
       number: '',
       complement: '',
       neighborhood: '',
-      postalCode: preloadedCep,
+      postalCode: '',
       city: '',
       state: '',
       countryCode: 'br',
       phone: '',
     };
+    if (typeof window === 'undefined') return empty;
+    // 1. Restore the persisted draft (if any)
+    try {
+      const raw = window.localStorage.getItem(CHECKOUT_FORM_KEY);
+      if (raw) {
+        const parsed = JSON.parse(raw) as Partial<ShippingForm>;
+        Object.assign(empty, parsed);
+      }
+    } catch {
+      // ignore
+    }
+    // 2. Seed the CEP from the cart preview if the draft still doesn't have one
+    if (!empty.postalCode) {
+      try {
+        const raw = window.localStorage.getItem(SHIPPING_PREVIEW_KEY);
+        if (raw) {
+          const parsed = JSON.parse(raw);
+          if (parsed?.cep) empty.postalCode = maskCEP(parsed.cep);
+        }
+      } catch {
+        // ignore
+      }
+    }
+    return empty;
   });
+  // Tracks whether the user has actually interacted with the form in
+  // this session. Used to avoid auto-scrolling/auto-focusing when the
+  // form is hydrated from persisted state on mount.
+  const userInteractedRef = useRef(false);
   const [selectedQuote, setSelectedQuote] = useState<QuoteOption | null>(() => {
     if (typeof window === 'undefined') return null;
     try {
@@ -514,6 +531,19 @@ const CheckoutPage: React.FC = () => {
     setFieldErrors({});
   };
 
+  // Persist form draft whenever it changes
+  useEffect(() => {
+    if (typeof window === 'undefined') return;
+    try {
+      window.localStorage.setItem(
+        CHECKOUT_FORM_KEY,
+        JSON.stringify(shippingForm)
+      );
+    } catch {
+      // ignore quota errors
+    }
+  }, [shippingForm]);
+
   // ViaCEP auto-fill
   useEffect(() => {
     const digits = shippingForm.postalCode.replace(/\D/g, '');
@@ -546,7 +576,12 @@ const CheckoutPage: React.FC = () => {
           delete next.postalCode;
           return next;
         });
-        numberInputRef.current?.focus();
+        // Only auto-focus the "number" field if the user actually typed
+        // the CEP in this session — otherwise we'd yank the page up when
+        // they're already scrolled to the shipping-method step.
+        if (userInteractedRef.current) {
+          numberInputRef.current?.focus({ preventScroll: true });
+        }
       } else {
         setCepFetched(false);
         setFieldErrors((prev) => ({ ...prev, postalCode: 'CEP não encontrado' }));
@@ -557,6 +592,7 @@ const CheckoutPage: React.FC = () => {
   }, [shippingForm.postalCode]);
 
   const handleShippingChange = (field: keyof ShippingForm, value: string) => {
+    userInteractedRef.current = true;
     let maskedValue = value;
 
     if (field === 'postalCode') maskedValue = maskCEP(value);
@@ -768,6 +804,12 @@ const CheckoutPage: React.FC = () => {
 
   const handlePaymentSuccess = useCallback(() => {
     setStep('success');
+    // Clear the persisted form draft and the shipping preview now that
+    // the purchase is complete — the next order starts from scratch.
+    if (typeof window !== 'undefined') {
+      window.localStorage.removeItem(CHECKOUT_FORM_KEY);
+      window.localStorage.removeItem(SHIPPING_PREVIEW_KEY);
+    }
   }, []);
 
   const isFormValid = Object.keys(validateAllFields(shippingForm)).length === 0;
