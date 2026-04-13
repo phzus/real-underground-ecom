@@ -10,6 +10,8 @@ import {
   createTaxRegionsWorkflow,
 } from "@medusajs/medusa/core-flows"
 
+const SUPERFRETE_PROVIDER_RESOLVE_ID = "superfrete_superfrete"
+
 const PROVIDER_ID = "superfrete_superfrete"
 
 const SERVICES = [
@@ -22,17 +24,17 @@ const SERVICES = [
 
 export default async function setupSuperfrete({ container }: ExecArgs) {
   const logger = container.resolve(ContainerRegistrationKeys.LOGGER)
+  const link = container.resolve(ContainerRegistrationKeys.LINK)
   const fulfillmentService = container.resolve(Modules.FULFILLMENT)
   const regionService = container.resolve(Modules.REGION)
+  const stockLocationService = container.resolve(Modules.STOCK_LOCATION)
 
   logger.info("[superfrete] verificando região Brasil…")
 
-  const existingRegions = await regionService.listRegions({
+  const brlRegions: any[] = await regionService.listRegions({
     currency_code: "brl",
-  })
-  let region = existingRegions.find((r: any) =>
-    (r.countries || []).some((c: any) => c.iso_2 === "br")
-  )
+  } as any)
+  let region: any = brlRegions[0] ?? null
 
   if (!region) {
     logger.info("[superfrete] criando região Brasil (BRL)…")
@@ -50,7 +52,7 @@ export default async function setupSuperfrete({ container }: ExecArgs) {
     })
     region = result[0]
   } else {
-    logger.info("[superfrete] região Brasil já existe.")
+    logger.info(`[superfrete] região Brasil já existe (${region.id}).`)
   }
 
   const taxRegions = await (async () => {
@@ -115,6 +117,48 @@ export default async function setupSuperfrete({ container }: ExecArgs) {
   if (!zone) {
     logger.error("[superfrete] service zone Brasil não foi criada — abortando.")
     return
+  }
+
+  // Ensure stock location ↔ superfrete provider link exists (required for
+  // create-shipping-options to accept the provider).
+  const stockLocations = await stockLocationService.listStockLocations({})
+  const stockLocation = stockLocations[0]
+  if (!stockLocation) {
+    logger.error(
+      "[superfrete] nenhuma stock location encontrada — rode o seed primeiro."
+    )
+    return
+  }
+  try {
+    await link.create({
+      [Modules.STOCK_LOCATION]: { stock_location_id: stockLocation.id },
+      [Modules.FULFILLMENT]: {
+        fulfillment_provider_id: SUPERFRETE_PROVIDER_RESOLVE_ID,
+      },
+    })
+    logger.info(
+      `[superfrete] provider linkado à stock location ${stockLocation.id}`
+    )
+  } catch (e) {
+    logger.info(
+      `[superfrete] link já existe ou não pôde criar (${(e as Error).message})`
+    )
+  }
+
+  // Also link the fulfillment set to the stock location so the service zone
+  // is reachable from the same location.
+  try {
+    await link.create({
+      [Modules.STOCK_LOCATION]: { stock_location_id: stockLocation.id },
+      [Modules.FULFILLMENT]: { fulfillment_set_id: fset.id },
+    })
+    logger.info(
+      `[superfrete] fulfillment set linkado à stock location ${stockLocation.id}`
+    )
+  } catch (e) {
+    logger.info(
+      `[superfrete] link fset já existe ou não pôde criar (${(e as Error).message})`
+    )
   }
 
   const existingOptions = await fulfillmentService.listShippingOptions({
