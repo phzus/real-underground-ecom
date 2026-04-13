@@ -7,7 +7,6 @@ import {
   Heading,
   Input,
   Label,
-  Select,
   Text,
   toast,
 } from "@medusajs/ui"
@@ -48,13 +47,11 @@ const STATUS_LABEL: Record<string, string> = {
   error: "Erro",
 }
 
-const SERVICE_OPTIONS = [
-  { code: 1, label: "PAC" },
-  { code: 2, label: "SEDEX" },
-  { code: 17, label: "Mini Envios" },
-  { code: 3, label: "Jadlog Package" },
-  { code: 31, label: "Loggi Econômico" },
-]
+type OrderService = {
+  service_code: number
+  name: string
+  carrier: string | null
+}
 
 const OrderSuperfreteWidget = ({
   data,
@@ -65,7 +62,7 @@ const OrderSuperfreteWidget = ({
   const [loading, setLoading] = useState(true)
   const [working, setWorking] = useState(false)
   const [shipment, setShipment] = useState<Shipment | null>(null)
-  const [serviceId, setServiceId] = useState<number>(1)
+  const [orderService, setOrderService] = useState<OrderService | null>(null)
   const [cancelReason, setCancelReason] = useState("")
   const [showCancel, setShowCancel] = useState(false)
 
@@ -78,7 +75,7 @@ const OrderSuperfreteWidget = ({
       if (!res.ok) throw new Error("Falha ao carregar envio")
       const body = await res.json()
       setShipment(body.shipment ?? null)
-      if (body.shipment?.service_id) setServiceId(body.shipment.service_id)
+      setOrderService(body.order_service ?? null)
     } catch (e) {
       toast.error((e as Error).message)
     } finally {
@@ -97,7 +94,7 @@ const OrderSuperfreteWidget = ({
         method: "POST",
         credentials: "include",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ service_id: serviceId }),
+        body: JSON.stringify({}),
       })
       const body = await res.json()
       if (!res.ok) throw new Error(body.message || "Falha ao gerar etiqueta")
@@ -168,31 +165,41 @@ const OrderSuperfreteWidget = ({
         {loading && <Text className="text-ui-fg-subtle">Carregando…</Text>}
 
         {!loading && !shipment && (
-          <div className="space-y-3">
-            <Text>Nenhum envio criado ainda para este pedido.</Text>
-            <div className="flex items-end gap-2">
-              <div className="flex-1">
-                <Label>Serviço</Label>
-                <Select
-                  value={String(serviceId)}
-                  onValueChange={(v) => setServiceId(Number(v))}
+          <div className="space-y-4">
+            {orderService ? (
+              <>
+                <div className="grid grid-cols-2 gap-x-4 gap-y-2 text-sm">
+                  <Text className="text-ui-fg-subtle">
+                    Serviço escolhido pelo cliente
+                  </Text>
+                  <Text>
+                    {orderService.name}
+                    {orderService.carrier ? ` · ${orderService.carrier}` : ""}
+                  </Text>
+                </div>
+                <Button
+                  variant="primary"
+                  isLoading={working}
+                  onClick={generateLabel}
                 >
-                  <Select.Trigger>
-                    <Select.Value />
-                  </Select.Trigger>
-                  <Select.Content>
-                    {SERVICE_OPTIONS.map((s) => (
-                      <Select.Item key={s.code} value={String(s.code)}>
-                        {s.label}
-                      </Select.Item>
-                    ))}
-                  </Select.Content>
-                </Select>
+                  Gerar etiqueta
+                </Button>
+                <Text size="small" className="text-ui-fg-subtle">
+                  A etiqueta será emitida para o serviço que o cliente
+                  selecionou no checkout. Certifique-se de ter saldo na
+                  carteira SuperFrete.
+                </Text>
+              </>
+            ) : (
+              <div className="space-y-2 rounded-md border border-ui-border-base p-3">
+                <Text size="small">
+                  Este pedido não tem serviço SuperFrete definido no método
+                  de envio — provavelmente foi criado antes da integração ou
+                  usa um método de envio manual. Não é possível emitir uma
+                  etiqueta automaticamente.
+                </Text>
               </div>
-              <Button variant="primary" isLoading={working} onClick={generateLabel}>
-                Gerar etiqueta
-              </Button>
-            </div>
+            )}
           </div>
         )}
 

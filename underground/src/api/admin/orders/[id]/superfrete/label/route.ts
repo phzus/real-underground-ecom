@@ -10,17 +10,21 @@ type Body = {
 }
 
 function pickServiceId(order: any, body: Body): number | null {
-  if (body?.service_id) return Number(body.service_id)
-  const metaSvc =
-    order?.metadata?.superfrete_service_id ||
-    order?.metadata?.superfrete?.service_id
-  if (metaSvc) return Number(metaSvc)
+  // Priority 1: shipping method chosen by the customer during checkout.
+  // This is the source of truth — the customer paid for THIS service.
   const method = order?.shipping_methods?.[0]
   const methodSvc =
     method?.data?.service_code ||
     method?.data?.service_id ||
     method?.metadata?.service_code
   if (methodSvc) return Number(methodSvc)
+  // Priority 2: order metadata (set by subscribers or custom flows).
+  const metaSvc =
+    order?.metadata?.superfrete_service_id ||
+    order?.metadata?.superfrete?.service_id
+  if (metaSvc) return Number(metaSvc)
+  // Priority 3: explicit override from the admin (escape hatch, not exposed in UI).
+  if (body?.service_id) return Number(body.service_id)
   return null
 }
 
