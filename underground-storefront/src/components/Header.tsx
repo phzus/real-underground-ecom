@@ -5,6 +5,7 @@ import { Link } from 'react-router-dom';
 import { ShoppingBag, User, Search, Menu, X } from 'lucide-react';
 import Logo from './Logo';
 import { useCart } from '@/context/CartContext';
+import { useAuth } from '@/context/AuthContext';
 
 interface HeaderProps {
   onMenuToggle: () => void;
@@ -13,6 +14,7 @@ interface HeaderProps {
 
 const Header: React.FC<HeaderProps> = ({ onMenuToggle, isMenuOpen }) => {
   const { totalItems } = useCart();
+  const { isAuthenticated, customer } = useAuth();
 
   return (
     <div className="w-full">
@@ -56,12 +58,21 @@ const Header: React.FC<HeaderProps> = ({ onMenuToggle, isMenuOpen }) => {
 
           {/* Right: Actions */}
           <div className="flex items-center justify-end gap-5 lg:w-1/3">
-            <button className="hidden sm:flex items-center gap-2 group" aria-label="Conta" tabIndex={0}>
+            <Link
+              to="/conta"
+              className="hidden sm:flex items-center gap-2 group"
+              aria-label={isAuthenticated ? 'Minha conta' : 'Entrar'}
+              tabIndex={0}
+            >
               <User size={20} strokeWidth={1.5} className="text-zinc-400 group-hover:text-white transition-colors" />
               <span className="text-[10px] font-medium uppercase tracking-widest text-zinc-400 group-hover:text-white transition-colors hidden md:block">
-                Entrar
+                {isAuthenticated
+                  ? customer?.first_name
+                    ? customer.first_name
+                    : 'Minha conta'
+                  : 'Entrar'}
               </span>
-            </button>
+            </Link>
 
             <Link to="/cart" className="relative flex items-center group" aria-label={`Sacola com ${totalItems} itens`} tabIndex={0}>
               <ShoppingBag size={20} strokeWidth={1.5} className="text-zinc-400 group-hover:text-white transition-colors" />

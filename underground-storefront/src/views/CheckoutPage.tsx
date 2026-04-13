@@ -7,10 +7,17 @@ import { CheckCircle2, Lock, Loader2, AlertCircle, ChevronDown, ChevronUp, Shiel
 import { loadStripe } from '@stripe/stripe-js';
 import { Elements, PaymentElement, useStripe, useElements } from '@stripe/react-stripe-js';
 import { useCart } from '@/context/CartContext';
+import { useAuth } from '@/context/AuthContext';
 import { formatPrice } from '@/lib/hooks';
 import { sdk } from '@/lib/medusa';
 import type { HttpTypes } from '@medusajs/types';
 import ShippingQuote, { QuoteOption, ShippingQuoteItem } from '@/components/ShippingQuote';
+import {
+  CustomerAddress,
+  createCustomerAddress,
+  listCustomerAddresses,
+} from '@/lib/auth';
+import { MapPin, Save } from 'lucide-react';
 
 const SHIPPING_PREVIEW_KEY = 'superfrete_preview';
 
@@ -384,6 +391,7 @@ const StripeForm = ({
 const CheckoutPage: React.FC = () => {
   const [step, setStep] = useState<Step>('shipping');
   const { cart, updateCart } = useCart();
+  const { customer, isAuthenticated } = useAuth();
   const navigate = useNavigate();
 
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -395,6 +403,11 @@ const CheckoutPage: React.FC = () => {
   const [fieldErrors, setFieldErrors] = useState<FieldErrors>({});
   const [touched, setTouched] = useState<Record<string, boolean>>({});
   const numberInputRef = useRef<HTMLInputElement>(null);
+
+  // Saved addresses (only loaded for authenticated customers)
+  const [savedAddresses, setSavedAddresses] = useState<CustomerAddress[]>([]);
+  const [selectedAddressId, setSelectedAddressId] = useState<string | null>(null);
+  const [saveAddress, setSaveAddress] = useState(false);
 
   const [shippingForm, setShippingForm] = useState<ShippingForm>(() => {
     let preloadedCep = '';
@@ -460,6 +473,45 @@ const CheckoutPage: React.FC = () => {
 
     fetchShippingOptions();
   }, [cart?.id]);
+
+  // Prefill email and load saved addresses when logged in
+  useEffect(() => {
+    if (!isAuthenticated || !customer) return;
+    setShippingForm((prev) => ({
+      ...prev,
+      email: prev.email || customer.email || '',
+      firstName: prev.firstName || customer.first_name || '',
+      lastName: prev.lastName || customer.last_name || '',
+      phone: prev.phone || (customer.phone ? maskPhone(customer.phone) : ''),
+    }));
+    listCustomerAddresses()
+      .then((addrs) => setSavedAddresses(addrs))
+      .catch((err) => console.error('Failed to load addresses', err));
+  }, [isAuthenticated, customer]);
+
+  const applySavedAddress = (addrId: string) => {
+    const addr = savedAddresses.find((a) => a.id === addrId);
+    if (!addr) return;
+    setSelectedAddressId(addrId);
+    const meta = (addr.metadata ?? {}) as Record<string, any>;
+    const addrParts = (addr.address_1 ?? '').split(',').map((s) => s.trim());
+    setShippingForm((prev) => ({
+      ...prev,
+      firstName: addr.first_name || prev.firstName,
+      lastName: addr.last_name || prev.lastName,
+      phone: addr.phone ? maskPhone(addr.phone) : prev.phone,
+      postalCode: addr.postal_code ? maskCEP(addr.postal_code) : prev.postalCode,
+      address1: addrParts[0] || prev.address1,
+      number: meta.number || addrParts[1] || prev.number,
+      complement: addrParts[2] || prev.complement,
+      neighborhood: meta.district || prev.neighborhood,
+      city: addr.city || prev.city,
+      state: (addr.province || '').toUpperCase() || prev.state,
+      countryCode: addr.country_code || 'br',
+    }));
+    setCepFetched(true);
+    setFieldErrors({});
+  };
 
   // ViaCEP auto-fill
   useEffect(() => {
@@ -593,6 +645,29 @@ const CheckoutPage: React.FC = () => {
           phone: shippingForm.phone,
         },
       });
+
+      // Save address to customer's address book if requested
+      if (isAuthenticated && saveAddress && !selectedAddressId) {
+        try {
+          await createCustomerAddress({
+            first_name: shippingForm.firstName,
+            last_name: shippingForm.lastName,
+            phone: shippingForm.phone.replace(/\D/g, '') || undefined,
+            address_1: fullAddress,
+            postal_code: shippingForm.postalCode.replace(/\D/g, ''),
+            city: shippingForm.city,
+            province: shippingForm.state,
+            country_code: shippingForm.countryCode,
+            metadata: {
+              district: shippingForm.neighborhood,
+              number: shippingForm.number,
+            },
+          } as any);
+        } catch (err) {
+          console.error('Failed to save address:', err);
+          // non-blocking: don't stop the checkout if save fails
+        }
+      }
 
       const refreshed = await sdk.store.fulfillment.listCartOptions({
         cart_id: cart.id,
@@ -747,6 +822,46 @@ const CheckoutPage: React.FC = () => {
               >
                 {step === 'shipping' && (
                   <div className="space-y-16">
+                    {/* Saved addresses (logged in) */}
+                    {isAuthenticated && savedAddresses.length > 0 && (
+                      <div>
+                        <h2 className="text-3xl font-light tracking-tighter mb-4">Endereços salvos</h2>
+                        <p className="text-[10px] font-bold uppercase tracking-widest text-zinc-600 mb-6">
+                          Selecione um endereço ou preencha um novo abaixo
+                        </p>
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                          {savedAddresses.map((addr) => {
+                            const selected = selectedAddressId === addr.id
+                            return (
+                              <button
+                                key={addr.id}
+                                type="button"
+                                onClick={() => applySavedAddress(addr.id)}
+                                className={`text-left p-5 border transition-all ${
+                                  selected
+                                    ? 'border-[#e34717] bg-[#e34717]/5'
+                                    : 'border-white/10 hover:border-white/20 bg-zinc-950'
+                                }`}
+                              >
+                                <div className="flex items-center gap-2 mb-2">
+                                  <MapPin size={12} className="text-[#e34717]" />
+                                  <span className="text-[9px] font-bold uppercase tracking-[0.3em] text-zinc-500">
+                                    {addr.first_name} {addr.last_name}
+                                  </span>
+                                </div>
+                                <div className="text-sm font-medium text-white leading-relaxed">
+                                  {addr.address_1}
+                                </div>
+                                <div className="text-[10px] text-zinc-500 uppercase tracking-widest mt-2">
+                                  {addr.city} · {addr.province} · {addr.postal_code}
+                                </div>
+                              </button>
+                            )
+                          })}
+                        </div>
+                      </div>
+                    )}
+
                     {/* Contact Info */}
                     <div>
                       <h2 className="text-3xl font-light tracking-tighter mb-8">Informações de Contato</h2>
@@ -928,6 +1043,38 @@ const CheckoutPage: React.FC = () => {
                         label="Escolha a transportadora"
                       />
                     </div>
+
+                    {/* Save address option */}
+                    {isAuthenticated && !selectedAddressId && (
+                      <div className="pt-4">
+                        <label className="flex items-start gap-4 cursor-pointer group">
+                          <div className="relative mt-1">
+                            <input
+                              type="checkbox"
+                              checked={saveAddress}
+                              onChange={(e) => setSaveAddress(e.target.checked)}
+                              className="sr-only peer"
+                            />
+                            <div className="w-4 h-4 border border-white/20 peer-checked:bg-[#e34717] peer-checked:border-[#e34717] transition-all flex items-center justify-center">
+                              {saveAddress && (
+                                <svg width="10" height="10" viewBox="0 0 12 12" fill="none">
+                                  <path d="M2 6L5 9L10 3" stroke="white" strokeWidth="2" />
+                                </svg>
+                              )}
+                            </div>
+                          </div>
+                          <div className="flex-1">
+                            <div className="flex items-center gap-2 text-[10px] font-bold uppercase tracking-widest text-white group-hover:text-[#e34717] transition-colors">
+                              <Save size={12} />
+                              Salvar endereço para próximas compras
+                            </div>
+                            <div className="text-[9px] text-zinc-600 uppercase tracking-widest mt-1">
+                              Você poderá selecioná-lo rapidamente em futuras compras
+                            </div>
+                          </div>
+                        </label>
+                      </div>
+                    )}
 
                     {/* Submit */}
                     <div className="pt-8">

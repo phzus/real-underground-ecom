@@ -57,13 +57,43 @@ const Footer: React.FC = () => {
         </div>
 
         {/* Utility Links */}
-        <div className="flex flex-wrap items-center justify-center gap-6 mb-10">
+        <div className="flex flex-wrap items-center justify-center gap-x-8 gap-y-4 mb-10">
           <Link
             to="/rastrear"
             className="flex items-center gap-2 text-[10px] font-black tracking-[0.3em] uppercase text-zinc-400 hover:text-[#e34717] transition-colors"
           >
             <Package size={12} />
             Rastrear Pedido
+          </Link>
+          <Link
+            to="/conta"
+            className="text-[10px] font-black tracking-[0.3em] uppercase text-zinc-400 hover:text-[#e34717] transition-colors"
+          >
+            Minha Conta
+          </Link>
+          <Link
+            to="/entrega"
+            className="text-[10px] font-black tracking-[0.3em] uppercase text-zinc-400 hover:text-[#e34717] transition-colors"
+          >
+            Prazos e Envios
+          </Link>
+          <Link
+            to="/trocas-e-devolucoes"
+            className="text-[10px] font-black tracking-[0.3em] uppercase text-zinc-400 hover:text-[#e34717] transition-colors"
+          >
+            Trocas
+          </Link>
+          <Link
+            to="/politica-de-privacidade"
+            className="text-[10px] font-black tracking-[0.3em] uppercase text-zinc-400 hover:text-[#e34717] transition-colors"
+          >
+            Privacidade
+          </Link>
+          <Link
+            to="/termos-de-uso"
+            className="text-[10px] font-black tracking-[0.3em] uppercase text-zinc-400 hover:text-[#e34717] transition-colors"
+          >
+            Termos
           </Link>
         </div>
 
