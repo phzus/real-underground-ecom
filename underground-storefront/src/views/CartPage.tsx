@@ -25,7 +25,15 @@ const CartPage: React.FC = () => {
     if (typeof window === 'undefined') return null;
     try {
       const raw = window.localStorage.getItem(SHIPPING_PREVIEW_KEY);
-      return raw ? (JSON.parse(raw) as ShippingPreview) : null;
+      if (!raw) return null;
+      const parsed = JSON.parse(raw) as ShippingPreview;
+      // Drop stale entries without a CEP (left over from an older build).
+      const cepDigits = (parsed?.cep || '').replace(/\D/g, '');
+      if (cepDigits.length !== 8) {
+        window.localStorage.removeItem(SHIPPING_PREVIEW_KEY);
+        return null;
+      }
+      return parsed;
     } catch {
       return null;
     }
