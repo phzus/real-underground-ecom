@@ -284,7 +284,7 @@ const CartPage: React.FC = () => {
                 </div>
               </div>
 
-              <div className="mb-10 pb-10 border-b border-white/10">
+              <div className="mb-10">
                 <ShippingQuote
                   items={quoteItems}
                   cartId={cart?.id}
