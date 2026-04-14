@@ -248,9 +248,11 @@ const StepProgress = ({ step }: { step: Step }) => {
 const StripeForm = ({
   clientSecret,
   onSuccess,
+  orderTotal,
 }: {
   clientSecret: string;
   onSuccess: () => void;
+  orderTotal?: number;
 }) => {
   const { cart, refreshCart } = useCart();
   const [loading, setLoading] = useState(false);
@@ -372,7 +374,7 @@ const StripeForm = ({
           <span className="absolute inset-0 w-full h-full bg-white -translate-x-full group-hover:translate-x-0 transition-transform duration-500 ease-out"></span>
           <span className="relative flex items-center gap-3 group-hover:text-black transition-colors">
             {loading ? <Loader2 size={14} className="animate-spin" /> : <Lock size={14} />}
-            {loading ? 'Processando...' : `Pagar ${cart ? formatPrice(cart.total, cart.currency_code) : ''}`}
+            {loading ? 'Processando...' : `Pagar ${formatPrice(orderTotal ?? cart?.total ?? 0, cart?.currency_code ?? 'brl')}`}
           </span>
         </button>
         <div className="mt-6 flex flex-col items-center justify-center gap-2 text-zinc-500">
@@ -398,6 +400,7 @@ const CheckoutPage: React.FC = () => {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [shippingOptions, setShippingOptions] = useState<HttpTypes.StoreCartShippingOption[]>([]);
   const [clientSecret, setClientSecret] = useState<string | null>(null);
+  const [confirmedTotal, setConfirmedTotal] = useState<number | null>(null);
   const [isSummaryOpen, setIsSummaryOpen] = useState(false);
   const [cepLoading, setCepLoading] = useState(false);
   const [cepFetched, setCepFetched] = useState(false);
@@ -753,6 +756,7 @@ const CheckoutPage: React.FC = () => {
 
       const updatedCartRes = await sdk.store.cart.retrieve(cart.id);
       const updatedCart = updatedCartRes.cart;
+      setConfirmedTotal(updatedCart.total);
       console.log('[checkout] cart after addShippingMethod:', {
         total: updatedCart.total,
         shipping_total: updatedCart.shipping_total,
@@ -877,7 +881,7 @@ const CheckoutPage: React.FC = () => {
                           {item.variant_title && `${item.variant_title} · `}Qtd: {item.quantity}
                         </span>
                       </div>
-                      <span className="tracking-tighter">
+                      <span className="tracking-tighter text-sm">
                         {formatPrice((item.unit_price ?? 0) * item.quantity, currencyCode)}
                       </span>
                     </div>
@@ -1207,7 +1211,7 @@ const CheckoutPage: React.FC = () => {
                         },
                       }}
                     >
-                      <StripeForm clientSecret={clientSecret} onSuccess={handlePaymentSuccess} />
+                      <StripeForm clientSecret={clientSecret} onSuccess={handlePaymentSuccess} orderTotal={confirmedTotal ?? undefined} />
                     </Elements>
                   </div>
                 )}
@@ -1218,7 +1222,7 @@ const CheckoutPage: React.FC = () => {
           {/* Sidebar Summary */}
           <div className="lg:col-span-5">
             <div className="glass p-10 sticky top-40 premium-shadow rounded-sm">
-              <h3 className="text-[10px] font-bold uppercase tracking-[0.5em] text-zinc-600 mb-10">LISTA DO DROP</h3>
+              <h3 className="text-[10px] font-bold uppercase tracking-[0.5em] text-zinc-600 mb-10">RESUMO DO PEDIDO</h3>
               <div className="space-y-6 mb-12">
                 {cart?.items?.map((item) => (
                   <div key={item.id} className="flex justify-between items-center text-xs font-medium">
@@ -1237,7 +1241,7 @@ const CheckoutPage: React.FC = () => {
               <div className="pt-8 border-t border-zinc-900 flex justify-between items-end">
                 <span className="text-[10px] font-bold uppercase tracking-widest text-zinc-500">Valor Total</span>
                 <span className="text-3xl font-light tracking-tighter">
-                  {formatPrice(cart?.total ?? 0, currencyCode)}
+                  {formatPrice(confirmedTotal ?? cart?.total ?? 0, currencyCode)}
                 </span>
               </div>
 
