@@ -45,6 +45,10 @@ services:
         condition: service_healthy
     env_file:
       - .env.production
+    environment:
+      BACKEND_URL: https://admin.driveitlikestoleit.com
+    volumes:
+      - ru_uploads:/app/server/uploads
     networks:
       - ru_internal
       - proxy
@@ -52,6 +56,7 @@ services:
 volumes:
   ru_pg_data:
   ru_redis_data:
+  ru_uploads:
 
 networks:
   ru_internal:
