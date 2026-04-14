@@ -148,7 +148,7 @@ const ShippingQuote: React.FC<Props> = ({
       </div>
 
       {showCepInput && (
-        <div className="space-y-2">
+        <div className="space-y-10">
           <label className="text-[8px] font-bold uppercase tracking-widest text-zinc-600">
             CEP de entrega
           </label>
