@@ -331,7 +331,7 @@ const ProductListPage: React.FC = () => {
                 />
                 <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-x-4 md:gap-x-6 gap-y-10 md:gap-y-14">
                   {categoryProducts.map((product, idx) => (
-                    <ProductCard key={product.id} product={product} index={idx} locked />
+                    <ProductCard key={product.id} product={product} index={idx} />
                   ))}
                 </div>
               </section>
@@ -343,7 +343,7 @@ const ProductListPage: React.FC = () => {
               <SectionHeader title="Outros" subtitle="Arquivo" />
               <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-x-4 md:gap-x-6 gap-y-10 md:gap-y-14">
                 {uncategorized.map((product, idx) => (
-                  <ProductCard key={product.id} product={product} index={idx} locked />
+                  <ProductCard key={product.id} product={product} index={idx} />
                 ))}
               </div>
             </section>
