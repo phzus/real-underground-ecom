@@ -173,7 +173,7 @@ const ProductDetailPage: React.FC = () => {
                     className="absolute inset-0 z-50 bg-black/90 flex flex-col items-center justify-center text-center p-6 md:p-12"
                   >
                     <RefreshCw size={48} className="text-[#e34717] animate-spin mb-6 md:mb-8" />
-                    <h3 className="text-2xl md:text-3xl font-black italic tracking-tighter uppercase mb-2 md:mb-4">Ajustando Nano Banana...</h3>
+                    <h3 className="text-2xl md:text-3xl font-black tracking-tighter uppercase mb-2 md:mb-4">Ajustando Nano Banana...</h3>
                     <p className="text-[9px] font-mono text-zinc-500 uppercase tracking-widest">Aplicando texturas na sua foto</p>
                   </motion.div>
                 )}
@@ -196,7 +196,7 @@ const ProductDetailPage: React.FC = () => {
                     <div className="max-w-md">
                       <ShieldAlert className="mx-auto mb-6 md:mb-8 text-[#e34717]" size={32} />
                       <h4 className="text-[10px] font-black uppercase tracking-[0.5em] text-[#e34717] mb-4 md:mb-8">Lore Decodificado</h4>
-                      <p className="text-xl md:text-2xl lg:text-3xl font-black italic tracking-tighter leading-tight uppercase mb-8 md:mb-12">
+                      <p className="text-xl md:text-2xl lg:text-3xl font-black tracking-tighter leading-tight uppercase mb-8 md:mb-12">
                         {lore}
                       </p>
                       <button
@@ -252,14 +252,14 @@ const ProductDetailPage: React.FC = () => {
               <span className="text-[#e34717] text-[9px] md:text-[10px] font-black uppercase tracking-[0.5em] mb-4 block">
                 {product.categories?.[0]?.name ?? 'Série Arquivo'}
               </span>
-              <h1 className="lg:max-w-lg text-2xl md:text-8xl lg:text-5xl font-black tracking-tighter mb-6 md:mb-8 italic uppercase leading-[1]">
+              <h1 className="lg:max-w-lg text-2xl md:text-8xl lg:text-5xl font-black tracking-tighter mb-6 md:mb-8 uppercase leading-[1]">
                 {product.title}
               </h1>
 
               <div className="flex flex-col sm:flex-row sm:items-end justify-between border-b border-white/5 pb-6 md:pb-8 gap-6">
                 {displayPrice && (
                   <div className="flex items-baseline gap-2">
-                    <p className="text-4xl md:text-6xl lg:text-4xl font-black tracking-tighter italic text-[#e34717] leading-none">
+                    <p className="text-4xl md:text-6xl lg:text-4xl font-black tracking-tighter text-[#e34717] leading-none">
                       {formatPrice(displayPrice.amount, displayPrice.currencyCode)}
                     </p>
                   </div>

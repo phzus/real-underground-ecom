@@ -71,7 +71,7 @@ const SideMenu: React.FC<SideMenuProps> = ({ isOpen, onClose }) => {
                   <div className="text-[9px] font-bold uppercase tracking-[0.4em] text-zinc-600 mb-2">
                     Conta
                   </div>
-                  <div className="text-2xl font-black italic uppercase tracking-tighter text-white group-hover:text-[#e34717] transition-colors">
+                  <div className="text-2xl font-black uppercase tracking-tighter text-white group-hover:text-[#e34717] transition-colors">
                     {customer.first_name || 'Você'}
                   </div>
                   <div className="text-[10px] font-medium text-zinc-500 mt-1 normal-case tracking-normal">
@@ -101,7 +101,7 @@ const SideMenu: React.FC<SideMenuProps> = ({ isOpen, onClose }) => {
                 <div className="text-[9px] font-bold uppercase tracking-[0.4em] text-zinc-600">
                   Acesso
                 </div>
-                <div className="text-xl font-black italic uppercase tracking-tighter text-white">
+                <div className="text-xl font-black uppercase tracking-tighter text-white">
                   Entre ou cadastre-se
                 </div>
                 <div className="text-[10px] font-medium text-zinc-500 normal-case tracking-normal leading-relaxed">
@@ -129,7 +129,7 @@ const SideMenu: React.FC<SideMenuProps> = ({ isOpen, onClose }) => {
                 <Link
                   to="/"
                   onClick={closeAndNavigate}
-                  className="text-2xl font-black italic uppercase tracking-tighter text-white hover:text-[#e34717] transition-colors"
+                  className="text-2xl font-black uppercase tracking-tighter text-white hover:text-[#e34717] transition-colors"
                 >
                   Todos os produtos
                 </Link>
@@ -144,7 +144,7 @@ const SideMenu: React.FC<SideMenuProps> = ({ isOpen, onClose }) => {
                       <Link
                         to={`/categoria/${cat.handle}`}
                         onClick={closeAndNavigate}
-                        className="text-2xl font-black italic uppercase tracking-tighter text-white hover:text-[#e34717] transition-colors flex-1"
+                        className="text-2xl font-black uppercase tracking-tighter text-white hover:text-[#e34717] transition-colors flex-1"
                       >
                         {cat.name}
                       </Link>
@@ -177,7 +177,7 @@ const SideMenu: React.FC<SideMenuProps> = ({ isOpen, onClose }) => {
                                 key={sub.id}
                                 to={`/categoria/${sub.handle}`}
                                 onClick={closeAndNavigate}
-                                className="text-sm font-black italic uppercase tracking-tighter text-zinc-500 hover:text-white flex items-center justify-between"
+                                className="text-sm font-black uppercase tracking-tighter text-zinc-500 hover:text-white flex items-center justify-between"
                               >
                                 {sub.name}
                                 <ArrowRight size={12} className="text-[#e34717]/40" />

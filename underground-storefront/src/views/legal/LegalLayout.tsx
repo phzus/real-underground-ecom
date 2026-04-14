@@ -16,7 +16,7 @@ export const LegalSection: React.FC<{
   children: React.ReactNode
 }> = ({ title, children }) => (
   <section className="space-y-4">
-    <h2 className="text-xl md:text-2xl font-black italic uppercase tracking-tighter text-white">
+    <h2 className="text-xl md:text-2xl font-black uppercase tracking-tighter text-white">
       {title}
     </h2>
     <div className="text-zinc-400 text-sm leading-relaxed space-y-4">
@@ -44,7 +44,7 @@ const LegalLayout: React.FC<LegalLayoutProps> = ({
           {eyebrow}
         </div>
       </div>
-      <h1 className="text-5xl md:text-7xl font-black italic tracking-tighter mb-6">
+      <h1 className="text-5xl md:text-7xl font-black tracking-tighter mb-6">
         {title}
       </h1>
       {updatedAt && (
