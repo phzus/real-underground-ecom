@@ -48,7 +48,7 @@ services:
     environment:
       BACKEND_URL: https://admin.driveitlikestoleit.com
     volumes:
-      - ru_uploads:/app/server/uploads
+      - ru_static:/app/server/static
     networks:
       - ru_internal
       - proxy
@@ -56,7 +56,7 @@ services:
 volumes:
   ru_pg_data:
   ru_redis_data:
-  ru_uploads:
+  ru_static:
 
 networks:
   ru_internal:
